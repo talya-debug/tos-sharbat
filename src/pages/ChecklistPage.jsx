@@ -87,7 +87,7 @@ export default function ChecklistPage() {
                            status === STATUS.fail ? (isHe ? 'לא תקין' : 'Fail') :
                            (isHe ? 'לא נבדק' : 'N/A')}
                         </button>
-                        <span className="checklist-item-text">{item}</span>
+                        <span className="checklist-item-text">{isHe ? item.text : (item.textEn || item.text)}</span>
                         <button className="camera-btn" onClick={() => {}}>
                           <Camera size={18} />
                         </button>

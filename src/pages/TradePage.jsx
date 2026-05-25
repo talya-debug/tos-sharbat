@@ -56,7 +56,7 @@ export default function TradePage() {
               <div className="accordion-body">
                 <ol className="accordion-list">
                   {section.items.map((item, j) => (
-                    <li key={j}>{isHe ? item : (item)}</li>
+                    <li key={j}>{isHe ? item.text : (item.textEn || item.text)}</li>
                   ))}
                 </ol>
               </div>
