@@ -1,314 +1,232 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { trades } from '../data/trades';
-import { tradeData } from '../data/tradeData';
-import { useLang } from '../context/LanguageContext';
-import Icon from '../components/Icon';
-import TopHeader from '../components/TopHeader';
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { trades } from '../data/trades'
+import { tradeData } from '../data/tradeData'
 
-/* אייקונים לסקשנים */
-const sectionIcons = {
-  preparation: 'architecture',
-  execution: 'square_foot',
-  limitations: 'straighten',
-  highlights: 'lightbulb',
-  failures: 'warning',
-  inspections: 'fact_check',
-  safety: 'health_and_safety',
-  measurement: 'straighten',
-};
+/* מיפוי אייקונים */
+const iconMap = {
+  ClipboardCheck: 'assignment_late',
+  Wrench: 'construction',
+  Layers: 'layers',
+  AlertTriangle: 'warning',
+  CheckCircle: 'check_circle',
+  Shield: 'health_and_safety',
+  BookOpen: 'menu_book',
+  Settings: 'settings',
+  Eye: 'visibility',
+  Hammer: 'construction',
+  Ruler: 'straighten',
+  Droplets: 'water_drop',
+  Thermometer: 'thermostat',
+  FileText: 'description',
+  Camera: 'photo_camera',
+  Clock: 'schedule',
+  Target: 'gps_fixed',
+  Zap: 'bolt',
+  Info: 'info',
+}
+
+const sectionColors = [
+  '#2170e4', '#F59E0B', '#10B981', '#F97316', '#8B5CF6', '#EF4444', '#334155', '#06B6D4',
+]
 
 export default function ChecklistPage() {
-  const { tradeId } = useParams();
-  const navigate = useNavigate();
-  const { isHe } = useLang();
-  const trade = trades.find(t => t.id === tradeId);
-  const data = tradeData[tradeId];
+  const { tradeId } = useParams()
+  const navigate = useNavigate()
+  const [openSections, setOpenSections] = useState([0])
+  const [results, setResults] = useState({}) // { "sectionId-itemId": "pass" | "fail" }
+  const [notes, setNotes] = useState({})
 
-  // סקשנים רלוונטיים לבקר — ללא "before"
-  const qcSections = data
-    ? data.sections.filter(s => s.id !== 'before')
-    : [];
+  const trade = trades.find(t => t.id === tradeId)
+  const data = tradeData[tradeId]
 
-  const [openSections, setOpenSections] = useState({ 0: true });
-  const [results, setResults] = useState(() => {
-    const saved = localStorage.getItem(`tos-checklist-${tradeId}`);
-    return saved ? JSON.parse(saved) : {};
-  });
-  const [notes, setNotes] = useState(() => {
-    const saved = localStorage.getItem(`tos-defects-${tradeId}`);
-    return saved ? JSON.parse(saved) : {};
-  });
+  if (!trade || !data) {
+    return <p className="text-text-secondary">מלאכה לא נמצאה</p>
+  }
 
-  useEffect(() => {
-    localStorage.setItem(`tos-checklist-${tradeId}`, JSON.stringify(results));
-  }, [results, tradeId]);
+  // סינון סקשן "לפני ביצוע"
+  const sections = data.sections.filter(s => s.id !== 'before')
 
-  useEffect(() => {
-    localStorage.setItem(`tos-defects-${tradeId}`, JSON.stringify(notes));
-  }, [notes, tradeId]);
-
-  if (!trade || !data) return <div className="p-8 text-center">מלאכה לא נמצאה</div>;
-
-  // סטטיסטיקות
-  const allItems = qcSections.flatMap(s => s.items.map(item => `${s.id}-${item.id}`));
-  const totalItems = allItems.length;
-  const checkedCount = allItems.filter(k => results[k]).length;
-  const passCount = allItems.filter(k => results[k] === 'pass').length;
-  const failCount = allItems.filter(k => results[k] === 'fail').length;
+  // ספירת סה"כ פריטים ותוצאות
+  const totalItems = sections.reduce((sum, s) => sum + s.items.length, 0)
+  const checkedItems = Object.keys(results).length
+  const passCount = Object.values(results).filter(v => v === 'pass').length
+  const failCount = Object.values(results).filter(v => v === 'fail').length
+  const progress = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0
 
   const toggleSection = (idx) => {
-    setOpenSections(prev => ({ ...prev, [idx]: !prev[idx] }));
-  };
+    setOpenSections(prev =>
+      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+    )
+  }
 
-  const setResult = (key, value) => {
-    setResults(prev => {
-      if (prev[key] === value) {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      }
-      return { ...prev, [key]: value };
-    });
-  };
+  const setResult = (sectionId, itemId, value) => {
+    const key = `${sectionId}-${itemId}`
+    setResults(prev => ({ ...prev, [key]: prev[key] === value ? undefined : value }))
+  }
 
-  const getStatusClasses = (key, status) => {
-    const current = results[key];
-    if (current === status) {
-      if (status === 'pass') return 'bg-status-success text-white border border-status-success';
-      if (status === 'fail') return 'bg-status-error text-white border border-status-error';
-    }
-    if (status === 'pass') return 'bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20';
-    if (status === 'fail') return 'bg-status-error/10 text-status-error border border-status-error/20 hover:bg-status-error/20';
-    return '';
-  };
-
-  const handleSave = () => {
-    alert(isHe ? 'הדו"ח נשמר בהצלחה!' : 'Report saved successfully!');
-  };
+  const setNote = (sectionId, itemId, value) => {
+    setNotes(prev => ({ ...prev, [`${sectionId}-${itemId}`]: value }))
+  }
 
   return (
-    <div className="min-h-screen text-on-surface" style={{ backgroundColor: '#F0F2F5', backgroundImage: 'radial-gradient(#d1d5db 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-      {/* Header */}
-      <TopHeader
-        title={isHe ? trade.name : trade.nameEn}
-        showBack
-        tabs={[
-          {
-            label: isHe ? 'מדריך ביצוע' : 'Execution Guide',
-            active: false,
-            onClick: () => navigate(`/trade/${tradeId}`),
-          },
-          {
-            label: isHe ? 'בקרת איכות' : 'Quality Control',
-            active: true,
-            onClick: () => {},
-          },
-        ]}
-      />
+    <div className="pb-24">
+      {/* ברדקראמב + טוגל */}
+      <div className="flex justify-between items-end mb-8">
+        <div className="flex flex-col gap-1">
+          <nav className="flex text-[12px] text-text-secondary gap-2 items-center mb-1 tracking-wider">
+            <Link to="/dashboard" className="hover:text-primary transition-colors">דאשבורד</Link>
+            <span className="material-symbols-outlined text-[12px]">chevron_left</span>
+            <Link to="/dashboard" className="hover:text-primary transition-colors">ניהול מלאכות</Link>
+            <span className="material-symbols-outlined text-[12px]">chevron_left</span>
+            <span className="text-primary font-medium">{trade.name}</span>
+          </nav>
+          <h2 className="text-[32px] leading-[40px] font-bold text-text-primary">{trade.name}</h2>
+        </div>
 
-      {/* Sub-header badge */}
-      <div className="bg-surface-dark border-t border-on-primary/5 pb-4 px-container-margin">
-        <div className="max-w-[1200px] mx-auto pt-2">
-          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-secondary border border-secondary/20 px-3 py-1 rounded-full text-label-lg font-medium tracking-[0.01em]">
-            <Icon name="verified_user" size={18} />
-            {isHe ? 'בקרת איכות' : 'Quality Control'}
-          </span>
+        <div className="bg-bg p-1 rounded-full flex gap-1 shadow-sm border border-border">
+          <button
+            onClick={() => navigate(`/trade/${tradeId}`)}
+            className="px-6 py-2 rounded-full text-text-secondary hover:text-primary font-medium text-[14px] transition-all duration-200"
+          >
+            מדריך ביצוע
+          </button>
+          <button className="px-6 py-2 rounded-full bg-primary text-white font-medium text-[14px] transition-all duration-200">
+            בקרת איכות
+          </button>
         </div>
       </div>
 
-      <main className="max-w-[1200px] mx-auto py-8 px-container-margin mb-32">
-        {/* Checklist sections */}
-        <div className="space-y-4">
-          {qcSections.map((section, sIdx) => {
-            const isOpen = !!openSections[sIdx];
-            const sectionIcon = sectionIcons[section.id] || 'checklist';
+      {/* פס התקדמות */}
+      <div className="bg-white border border-border rounded-xl shadow-sm p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[14px] font-bold text-text-primary">התקדמות בדיקה</span>
+          <span className="text-[14px] text-text-secondary">{checkedItems} / {totalItems} פריטים</span>
+        </div>
+        <div className="w-full bg-bg rounded-full h-3 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${progress}%`,
+              backgroundColor: progress === 100 ? '#10B981' : '#3B82F6',
+            }}
+          />
+        </div>
+      </div>
 
-            return (
-              <div key={section.id} className="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden shadow-sm">
-                {/* Section header */}
-                <button
-                  onClick={() => toggleSection(sIdx)}
-                  className="w-full flex items-center justify-between p-4 bg-surface-container-low hover:bg-surface-container transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon name={sectionIcon} size={24} className="text-primary" />
-                    <h2 className="text-title-lg leading-7 font-medium">
-                      {isHe ? section.title : section.titleEn}
-                    </h2>
+      {/* אקורדיון בקרת איכות */}
+      <div className="max-w-4xl space-y-4">
+        {sections.map((section, idx) => {
+          const isOpen = openSections.includes(idx)
+          const materialIcon = iconMap[section.icon] || 'folder'
+          const color = sectionColors[(idx + 1) % sectionColors.length]
+
+          return (
+            <div
+              key={section.id}
+              className={`bg-white border border-border rounded-xl overflow-hidden shadow-sm transition-all duration-300 ${isOpen ? 'accordion-active' : ''}`}
+            >
+              <button
+                onClick={() => toggleSection(idx)}
+                className="w-full flex items-center justify-between p-4 hover:bg-bg/50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white"
+                    style={{ backgroundColor: color }}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{materialIcon}</span>
                   </div>
-                  <Icon
-                    name="expand_more"
-                    size={24}
-                    className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
-
-                {/* Section content */}
-                <div
-                  className="overflow-hidden transition-all duration-300"
-                  style={isOpen ? { maxHeight: '10000px' } : { maxHeight: '0' }}
-                >
-                  <div className="p-4 space-y-4 divide-y divide-outline-variant/30 balance-motif">
-                    {section.items.map(item => {
-                      const key = `${section.id}-${item.id}`;
-                      const current = results[key];
-                      const isFail = current === 'fail';
-
-                      return (
-                        <div key={item.id} className="pt-4 first:pt-0">
-                          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <span className="text-[20px] text-text-primary font-bold">{section.title}</span>
+                </div>
+                <span className="material-symbols-outlined chevron-icon transition-transform duration-300 text-text-secondary">
+                  expand_more
+                </span>
+              </button>
+              <div className="accordion-content border-t border-border">
+                <div className="p-6 space-y-5">
+                  {section.items.map((item, itemIdx) => {
+                    const key = `${section.id}-${item.id}`
+                    const result = results[key]
+                    return (
+                      <div key={item.id}>
+                        {itemIdx > 0 && <div className="h-px bg-border w-full mb-5"></div>}
+                        <div className="flex items-start gap-4">
+                          <span
+                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white mt-0.5"
+                            style={{ backgroundColor: color }}
+                          >
+                            {item.id}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-[16px] text-text-primary mb-3">{item.text}</p>
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/40">
-                                <Icon name="checklist" size={20} />
-                              </div>
-                              <p className="text-body-md leading-6 text-text-primary">
-                                {isHe ? item.text : item.textEn}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              {!current && (
-                                <>
-                                  <button className="status-chip bg-surface-container text-text-secondary px-3 py-1.5 rounded-lg text-label-sm font-semibold border border-outline-variant">
-                                    {isHe ? 'לא נבדק' : 'Not checked'}
-                                  </button>
-                                  <button
-                                    onClick={() => setResult(key, 'pass')}
-                                    className={`status-chip px-3 py-1.5 rounded-lg text-label-sm font-semibold ${getStatusClasses(key, 'pass')}`}
-                                  >
-                                    {isHe ? 'תקין' : 'Pass'}
-                                  </button>
-                                  <button
-                                    onClick={() => setResult(key, 'fail')}
-                                    className={`status-chip px-3 py-1.5 rounded-lg text-label-sm font-semibold ${getStatusClasses(key, 'fail')}`}
-                                  >
-                                    {isHe ? 'לא תקין' : 'Fail'}
-                                  </button>
-                                </>
-                              )}
-                              {current === 'pass' && (
-                                <button
-                                  onClick={() => setResult(key, 'pass')}
-                                  className="status-chip bg-status-success text-white border border-status-success px-3 py-1.5 rounded-lg text-label-sm font-semibold"
-                                >
-                                  {isHe ? 'תקין' : 'Pass'}
-                                </button>
-                              )}
-                              {current === 'fail' && (
-                                <button
-                                  onClick={() => setResult(key, 'fail')}
-                                  className="status-chip bg-status-error text-white border border-status-error px-3 py-1.5 rounded-lg text-label-sm font-semibold"
-                                >
-                                  {isHe ? 'לא תקין' : 'Fail'}
-                                </button>
-                              )}
+                              <button
+                                onClick={() => setResult(section.id, item.id, 'pass')}
+                                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium border transition-all cursor-pointer ${
+                                  result === 'pass'
+                                    ? 'bg-success/10 border-success text-success'
+                                    : 'bg-white border-border text-text-secondary hover:border-success hover:text-success'
+                                }`}
+                              >
+                                <span className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                  תקין
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => setResult(section.id, item.id, 'fail')}
+                                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium border transition-all cursor-pointer ${
+                                  result === 'fail'
+                                    ? 'bg-error/10 border-error text-error'
+                                    : 'bg-white border-border text-text-secondary hover:border-error hover:text-error'
+                                }`}
+                              >
+                                <span className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[16px]">cancel</span>
+                                  לא תקין
+                                </span>
+                              </button>
+                              <input
+                                type="text"
+                                placeholder="הערות..."
+                                value={notes[key] || ''}
+                                onChange={(e) => setNote(section.id, item.id, e.target.value)}
+                                className="flex-1 border border-border rounded-lg px-3 py-1.5 text-[13px] bg-bg outline-none focus:ring-2 focus:ring-action-blue/30 focus:border-action-blue"
+                              />
                             </div>
                           </div>
-                          <input
-                            className={`w-full bg-surface-container-lowest border rounded-lg px-4 py-2 text-body-sm leading-5 input-focus-effect ${
-                              isFail ? 'border-status-error/30 text-status-error' : 'border-outline-variant'
-                            }`}
-                            placeholder={isHe ? 'הערות...' : 'Notes...'}
-                            type="text"
-                            value={notes[key] || ''}
-                            onChange={e => setNotes(prev => ({ ...prev, [key]: e.target.value }))}
-                          />
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )
+        })}
+      </div>
 
-        {/* Visual Summary Grid */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg border border-outline-variant shadow-sm flex flex-col">
-            <h3 className="text-title-lg leading-7 font-medium mb-4 text-primary">
-              {isHe ? 'בקרת איכות ויזואלית' : 'Visual QC'}
-            </h3>
-            <div className="grid grid-cols-3 gap-3 flex-1">
-              <div className="aspect-square bg-surface-container-low rounded-lg border border-outline-variant flex items-center justify-center relative overflow-hidden group">
-                <Icon name="check_circle" size={36} className="text-status-success/30 group-hover:scale-110 transition-transform" />
-              </div>
-              <div className="aspect-square bg-surface-container-low rounded-lg border border-outline-variant flex items-center justify-center relative overflow-hidden group">
-                <Icon name="error" size={36} className="text-status-error/30 group-hover:scale-110 transition-transform" />
-              </div>
-              <button className="aspect-square border-2 border-dashed border-outline-variant rounded-lg flex flex-col items-center justify-center text-text-secondary hover:bg-surface-container-low transition-colors">
-                <Icon name="add" size={30} />
-                <span className="text-label-sm font-semibold mt-1">{isHe ? 'תיעוד' : 'Document'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg border border-outline-variant shadow-sm flex flex-col justify-center">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-action-blue/10 flex items-center justify-center text-action-blue">
-                <Icon name="monitoring" size={30} />
-              </div>
-              <div>
-                <h3 className="text-title-lg leading-7 font-medium text-primary">{isHe ? 'מגמות איכות' : 'Quality Trends'}</h3>
-                <p className="text-body-sm leading-5 text-text-secondary">
-                  {isHe ? 'שיפור של 12% מהבדיקה הקודמת' : '12% improvement from last inspection'}
-                </p>
-              </div>
-            </div>
-            <div className="w-full bg-surface-container rounded-full h-2.5 overflow-hidden">
-              <div className="bg-action-blue h-full rounded-full" style={{ width: '75%' }}></div>
-            </div>
-            <div className="flex justify-between mt-2 text-label-sm font-semibold text-text-secondary">
-              <span>{isHe ? 'ציון נוכחי: 75' : 'Current: 75'}</span>
-              <span>{isHe ? 'יעד: 95' : 'Target: 95'}</span>
-            </div>
-          </div>
+      {/* בר תחתון קבוע */}
+      <div className="fixed bottom-0 left-0 right-[240px] bg-white border-t border-border px-8 py-4 flex items-center justify-between z-30">
+        <div className="flex items-center gap-6 text-[14px]">
+          <span className="text-text-secondary">
+            סה"כ: <strong className="text-text-primary">{totalItems}</strong>
+          </span>
+          <span className="text-success">
+            תקין: <strong>{passCount}</strong>
+          </span>
+          <span className="text-error">
+            לא תקין: <strong>{failCount}</strong>
+          </span>
+          <span className="text-text-secondary">
+            נותרו: <strong>{totalItems - checkedItems}</strong>
+          </span>
         </div>
-      </main>
-
-      {/* Fixed Bottom Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-outline-variant shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50">
-        <div className="max-w-[1200px] mx-auto px-container-margin h-20 flex items-center justify-between">
-          {/* Statistics */}
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-label-sm font-semibold text-text-secondary uppercase tracking-wider">
-                {isHe ? 'סטטוס התקדמות' : 'Progress Status'}
-              </span>
-              <span className="text-title-lg leading-7 font-medium text-primary">
-                {checkedCount}/{totalItems} {isHe ? 'נבדקו' : 'checked'}
-              </span>
-            </div>
-            <div className="h-10 w-px bg-outline-variant"></div>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-status-success"></span>
-                <span className="text-body-md leading-6">{passCount} {isHe ? 'תקין' : 'pass'}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-status-error"></span>
-                <span className="text-body-md leading-6">{failCount} {isHe ? 'לא תקין' : 'fail'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(`/trade/${tradeId}`)}
-              className="bg-surface-container-lowest border border-surface-dark text-surface-dark px-6 py-2.5 rounded-lg text-label-lg font-medium tracking-[0.01em] hover:bg-surface-container-low transition-all active:scale-95"
-            >
-              {isHe ? 'ביטול' : 'Cancel'}
-            </button>
-            <button
-              onClick={handleSave}
-              className="bg-action-blue text-white px-8 py-2.5 rounded-lg text-label-lg font-medium tracking-[0.01em] flex items-center gap-2 shadow-lg shadow-action-blue/20 hover:bg-blue-600 transition-all active:scale-95"
-            >
-              <Icon name="save" size={20} />
-              {isHe ? 'שמירת דו"ח' : 'Save Report'}
-            </button>
-          </div>
-        </div>
-      </footer>
+        <button className="bg-action-blue hover:bg-action-blue/90 text-white px-8 py-2.5 rounded-lg text-[14px] font-medium transition-all shadow-sm cursor-pointer">
+          שמור ביקורת
+        </button>
+      </div>
     </div>
-  );
+  )
 }
