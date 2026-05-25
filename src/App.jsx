@@ -4,7 +4,6 @@ import LandingPage from './pages/LandingPage';
 import TradesPage from './pages/TradesPage';
 import TradePage from './pages/TradePage';
 import ChecklistPage from './pages/ChecklistPage';
-import './App.css';
 
 export default function App() {
   return (
