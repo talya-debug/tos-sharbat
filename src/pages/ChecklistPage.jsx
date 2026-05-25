@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Camera, Save, ChevronDown } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Camera, Save } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import Header from '../components/Header';
+import Accordion from '../components/Accordion';
 import { useLang } from '../context/LanguageContext';
 import { trades } from '../data/trades';
 import { tradeData } from '../data/tradeData';
@@ -11,7 +12,6 @@ const STATUS = { unchecked: 'unchecked', pass: 'pass', fail: 'fail' };
 
 export default function ChecklistPage() {
   const { tradeId } = useParams();
-  const navigate = useNavigate();
   const { isHe } = useLang();
   const trade = trades.find(t => t.id === tradeId);
   const data = tradeData[tradeId];
@@ -58,20 +58,16 @@ export default function ChecklistPage() {
       <div className="sections">
         {data.sections.map((section, si) => {
           const Icon = LucideIcons[section.icon] || LucideIcons.FileText;
-          const isOpen = openSection === si;
           return (
-            <div key={si} className={`accordion ${isOpen ? 'open' : ''}`} style={{ borderRightColor: trade.color }}>
-              <button
-                className="accordion-header"
-                onClick={() => setOpenSection(prev => prev === si ? -1 : si)}
-              >
-                <div className="accordion-header-right">
-                  <Icon size={18} style={{ color: trade.color }} />
-                  <span>{isHe ? section.title : (section.titleEn || section.title)}</span>
-                </div>
-                <ChevronDown size={18} className={`accordion-chevron ${isOpen ? 'rotate' : ''}`} />
-              </button>
-              <div className="accordion-body">
+            <Accordion
+              key={si}
+              icon={Icon}
+              title={isHe ? section.title : (section.titleEn || section.title)}
+              color={trade.color}
+              isOpen={openSection === si}
+              onToggle={() => setOpenSection(prev => prev === si ? -1 : si)}
+            >
+              <div style={{ borderTop: '1px solid var(--border-light)' }}>
                 {section.items.map((item, ii) => {
                   const key = `${si}-${ii}`;
                   const { status, note } = items[key];
@@ -88,7 +84,7 @@ export default function ChecklistPage() {
                         </button>
                         <span className="checklist-item-text">{isHe ? item.text : (item.textEn || item.text)}</span>
                         <button className="camera-btn" onClick={() => {}}>
-                          <Camera size={18} />
+                          <Camera size={15} />
                         </button>
                       </div>
                       <input
@@ -101,7 +97,7 @@ export default function ChecklistPage() {
                   );
                 })}
               </div>
-            </div>
+            </Accordion>
           );
         })}
       </div>
@@ -113,7 +109,7 @@ export default function ChecklistPage() {
           <span className="summary-fail">{checkedItems - passItems} {isHe ? 'לא תקין' : 'fail'}</span>
         </div>
         <button className="save-report-btn" onClick={() => alert(isHe ? 'הדו"ח נשמר (דמו)' : 'Report saved (demo)')}>
-          <Save size={18} />
+          <Save size={16} />
           <span>{isHe ? 'שמירת דו"ח' : 'Save Report'}</span>
         </button>
       </div>
