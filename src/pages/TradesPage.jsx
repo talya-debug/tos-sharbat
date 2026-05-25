@@ -19,14 +19,32 @@ export default function TradesPage() {
             <div
               key={trade.id}
               className="trade-card"
-              style={{ borderTopColor: trade.color }}
+              style={{ borderRightColor: trade.color }}
               onClick={() => navigate(`/trade/${trade.id}`)}
             >
-              <div className="trade-card-icon" style={{ backgroundColor: trade.color + '18', color: trade.color }}>
-                <Icon size={28} />
+              <img
+                className="trade-card-image"
+                src={trade.image}
+                alt={trade.name}
+                loading="lazy"
+              />
+              <div className="trade-card-body">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div
+                    className="trade-card-icon"
+                    style={{ backgroundColor: trade.color + '18', color: trade.color }}
+                  >
+                    <Icon size={20} />
+                  </div>
+                  <span className="trade-card-name">
+                    {isHe ? trade.name : (trade.nameEn || trade.name)}
+                  </span>
+                </div>
+                <span className="trade-card-desc">
+                  {isHe ? trade.desc : (trade.descEn || trade.desc)}
+                </span>
               </div>
-              <span className="trade-card-name">{isHe ? trade.name : (trade.nameEn || trade.name)}</span>
-              <ChevronLeft size={18} className="trade-card-arrow" />
+              <ChevronLeft size={20} className="trade-card-arrow" />
             </div>
           );
         })}

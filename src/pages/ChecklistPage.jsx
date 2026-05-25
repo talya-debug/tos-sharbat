@@ -60,10 +60,9 @@ export default function ChecklistPage() {
           const Icon = LucideIcons[section.icon] || LucideIcons.FileText;
           const isOpen = openSection === si;
           return (
-            <div key={si} className={`accordion ${isOpen ? 'open' : ''}`}>
+            <div key={si} className={`accordion ${isOpen ? 'open' : ''}`} style={{ borderRightColor: trade.color }}>
               <button
                 className="accordion-header"
-                style={{ borderRightColor: trade.color }}
                 onClick={() => setOpenSection(prev => prev === si ? -1 : si)}
               >
                 <div className="accordion-header-right">

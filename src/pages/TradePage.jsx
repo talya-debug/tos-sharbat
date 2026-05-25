@@ -41,10 +41,9 @@ export default function TradePage() {
           const Icon = LucideIcons[section.icon] || LucideIcons.FileText;
           const isOpen = openSection === i;
           return (
-            <div key={i} className={`accordion ${isOpen ? 'open' : ''}`}>
+            <div key={i} className={`accordion ${isOpen ? 'open' : ''}`} style={{ borderRightColor: trade.color }}>
               <button
                 className="accordion-header"
-                style={{ borderRightColor: trade.color }}
                 onClick={() => toggleSection(i)}
               >
                 <div className="accordion-header-right">
