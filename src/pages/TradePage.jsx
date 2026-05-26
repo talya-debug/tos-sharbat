@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { trades } from '../data/trades'
 import { tradeData } from '../data/tradeData'
 
@@ -42,6 +42,10 @@ export default function TradePage() {
   const { tradeId } = useParams()
   const navigate = useNavigate()
   const [openSections, setOpenSections] = useState([0])
+  const [images, setImages] = useState({}) // { "sectionId-itemId": [url1, url2, ...] }
+  const [lightboxImg, setLightboxImg] = useState(null)
+  const fileInputRef = useRef(null)
+  const [activeUploadKey, setActiveUploadKey] = useState(null)
 
   const trade = trades.find(t => t.id === tradeId)
   const data = tradeData[tradeId]
@@ -54,6 +58,29 @@ export default function TradePage() {
     setOpenSections(prev =>
       prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
     )
+  }
+
+  const handleAddImage = (key) => {
+    setActiveUploadKey(key)
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !activeUploadKey) return
+    const url = URL.createObjectURL(file)
+    setImages(prev => ({
+      ...prev,
+      [activeUploadKey]: [...(prev[activeUploadKey] || []), url],
+    }))
+    e.target.value = ''
+  }
+
+  const removeImage = (key, idx) => {
+    setImages(prev => ({
+      ...prev,
+      [key]: prev[key].filter((_, i) => i !== idx),
+    }))
   }
 
   return (
@@ -116,26 +143,89 @@ export default function TradePage() {
               </button>
               <div className="accordion-content border-t border-border">
                 <div className="p-6 space-y-4 text-[16px] leading-[24px] text-text-secondary">
-                  {section.items.map((item, itemIdx) => (
-                    <div key={item.id}>
-                      {itemIdx > 0 && <div className="h-px bg-border w-full mb-4"></div>}
-                      <div className="flex gap-4">
-                        <span
-                          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white"
-                          style={{ backgroundColor: color }}
-                        >
-                          {item.id}
-                        </span>
-                        <p>{item.text}</p>
+                  {section.items.map((item, itemIdx) => {
+                    const imgKey = `${section.id}-${item.id}`
+                    const itemImages = images[imgKey] || []
+                    return (
+                      <div key={item.id}>
+                        {itemIdx > 0 && <div className="h-px bg-border w-full mb-4"></div>}
+                        <div className="flex gap-4 items-start">
+                          <span
+                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white mt-0.5"
+                            style={{ backgroundColor: color }}
+                          >
+                            {item.id}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p>{item.text}</p>
+                            {/* תמונות + כפתור הוספה */}
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              {itemImages.map((url, imgIdx) => (
+                                <div key={imgIdx} className="relative group">
+                                  <img
+                                    src={url}
+                                    alt={`תמונה ${imgIdx + 1}`}
+                                    className="w-12 h-12 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => setLightboxImg(url)}
+                                  />
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); removeImage(imgKey, imgIdx) }}
+                                    className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-error text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                              <button
+                                onClick={() => handleAddImage(imgKey)}
+                                className="w-12 h-12 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-text-secondary hover:border-action-blue hover:text-action-blue transition-colors"
+                                title="הוספת תמונה"
+                              >
+                                <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
           )
         })}
       </div>
+
+      {/* קלט קובץ מוסתר */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* לייטבוקס — תמונה מוגדלת */}
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-8 cursor-pointer"
+          onClick={() => setLightboxImg(null)}
+        >
+          <div className="relative max-w-3xl max-h-[80vh]">
+            <img
+              src={lightboxImg}
+              alt="תמונה מוגדלת"
+              className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl"
+            />
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="absolute top-3 left-3 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
