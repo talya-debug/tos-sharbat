@@ -121,26 +121,26 @@ export default function TradePage() {
   return (
     <div>
       {/* ברדקראמב + טוגל */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 mb-6 lg:mb-8">
         <div className="flex flex-col gap-1">
-          <nav className="flex text-[12px] text-text-secondary gap-2 items-center mb-1 tracking-wider">
+          <nav className="flex text-[12px] text-text-secondary gap-2 items-center mb-1 tracking-wider flex-wrap">
             <Link to="/dashboard" className="hover:text-primary transition-colors">דאשבורד</Link>
             <span className="material-symbols-outlined text-[12px]">chevron_left</span>
             <Link to="/dashboard" className="hover:text-primary transition-colors">ניהול מלאכות</Link>
             <span className="material-symbols-outlined text-[12px]">chevron_left</span>
             <span className="text-primary font-medium">{trade.name}</span>
           </nav>
-          <h2 className="text-[32px] leading-[40px] font-bold text-text-primary">{trade.name}</h2>
+          <h2 className="text-[24px] lg:text-[32px] leading-[32px] lg:leading-[40px] font-bold text-text-primary">{trade.name}</h2>
         </div>
 
         {/* טוגל טאבים */}
-        <div className="bg-bg p-1 rounded-full flex gap-1 shadow-sm border border-border">
-          <button className="px-6 py-2 rounded-full bg-primary text-white font-medium text-[14px] transition-all duration-200">
+        <div className="bg-bg p-1 rounded-full flex gap-1 shadow-sm border border-border self-start">
+          <button className="px-4 lg:px-6 py-2 rounded-full bg-primary text-white font-medium text-[13px] lg:text-[14px] transition-all duration-200">
             מדריך ביצוע
           </button>
           <button
             onClick={() => navigate(`/trade/${tradeId}/checklist`)}
-            className="px-6 py-2 rounded-full text-text-secondary hover:text-primary font-medium text-[14px] transition-all duration-200"
+            className="px-4 lg:px-6 py-2 rounded-full text-text-secondary hover:text-primary font-medium text-[13px] lg:text-[14px] transition-all duration-200"
           >
             בקרת איכות
           </button>

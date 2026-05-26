@@ -72,26 +72,26 @@ export default function ChecklistPage() {
   return (
     <div className="pb-24">
       {/* ברדקראמב + טוגל */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 mb-6 lg:mb-8">
         <div className="flex flex-col gap-1">
-          <nav className="flex text-[12px] text-text-secondary gap-2 items-center mb-1 tracking-wider">
+          <nav className="flex text-[12px] text-text-secondary gap-2 items-center mb-1 tracking-wider flex-wrap">
             <Link to="/dashboard" className="hover:text-primary transition-colors">דאשבורד</Link>
             <span className="material-symbols-outlined text-[12px]">chevron_left</span>
             <Link to="/dashboard" className="hover:text-primary transition-colors">ניהול מלאכות</Link>
             <span className="material-symbols-outlined text-[12px]">chevron_left</span>
             <span className="text-primary font-medium">{trade.name}</span>
           </nav>
-          <h2 className="text-[32px] leading-[40px] font-bold text-text-primary">{trade.name}</h2>
+          <h2 className="text-[24px] lg:text-[32px] leading-[32px] lg:leading-[40px] font-bold text-text-primary">{trade.name}</h2>
         </div>
 
-        <div className="bg-bg p-1 rounded-full flex gap-1 shadow-sm border border-border">
+        <div className="bg-bg p-1 rounded-full flex gap-1 shadow-sm border border-border self-start">
           <button
             onClick={() => navigate(`/trade/${tradeId}`)}
-            className="px-6 py-2 rounded-full text-text-secondary hover:text-primary font-medium text-[14px] transition-all duration-200"
+            className="px-4 lg:px-6 py-2 rounded-full text-text-secondary hover:text-primary font-medium text-[13px] lg:text-[14px] transition-all duration-200"
           >
             מדריך ביצוע
           </button>
-          <button className="px-6 py-2 rounded-full bg-primary text-white font-medium text-[14px] transition-all duration-200">
+          <button className="px-4 lg:px-6 py-2 rounded-full bg-primary text-white font-medium text-[13px] lg:text-[14px] transition-all duration-200">
             בקרת איכות
           </button>
         </div>
@@ -160,39 +160,41 @@ export default function ChecklistPage() {
                           </span>
                           <div className="flex-1">
                             <p className="text-[16px] text-text-primary mb-3">{item.text}</p>
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => setResult(section.id, item.id, 'pass')}
-                                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium border transition-all cursor-pointer ${
-                                  result === 'pass'
-                                    ? 'bg-success/10 border-success text-success'
-                                    : 'bg-white border-border text-text-secondary hover:border-success hover:text-success'
-                                }`}
-                              >
-                                <span className="flex items-center gap-1">
-                                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                                  תקין
-                                </span>
-                              </button>
-                              <button
-                                onClick={() => setResult(section.id, item.id, 'fail')}
-                                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium border transition-all cursor-pointer ${
-                                  result === 'fail'
-                                    ? 'bg-error/10 border-error text-error'
-                                    : 'bg-white border-border text-text-secondary hover:border-error hover:text-error'
-                                }`}
-                              >
-                                <span className="flex items-center gap-1">
-                                  <span className="material-symbols-outlined text-[16px]">cancel</span>
-                                  לא תקין
-                                </span>
-                              </button>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setResult(section.id, item.id, 'pass')}
+                                  className={`px-3 lg:px-4 py-1.5 rounded-lg text-[12px] lg:text-[13px] font-medium border transition-all cursor-pointer ${
+                                    result === 'pass'
+                                      ? 'bg-success/10 border-success text-success'
+                                      : 'bg-white border-border text-text-secondary hover:border-success hover:text-success'
+                                  }`}
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                    תקין
+                                  </span>
+                                </button>
+                                <button
+                                  onClick={() => setResult(section.id, item.id, 'fail')}
+                                  className={`px-3 lg:px-4 py-1.5 rounded-lg text-[12px] lg:text-[13px] font-medium border transition-all cursor-pointer ${
+                                    result === 'fail'
+                                      ? 'bg-error/10 border-error text-error'
+                                      : 'bg-white border-border text-text-secondary hover:border-error hover:text-error'
+                                  }`}
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[16px]">cancel</span>
+                                    לא תקין
+                                  </span>
+                                </button>
+                              </div>
                               <input
                                 type="text"
                                 placeholder="הערות..."
                                 value={notes[key] || ''}
                                 onChange={(e) => setNote(section.id, item.id, e.target.value)}
-                                className="flex-1 border border-border rounded-lg px-3 py-1.5 text-[13px] bg-bg outline-none focus:ring-2 focus:ring-action-blue/30 focus:border-action-blue"
+                                className="w-full sm:flex-1 border border-border rounded-lg px-3 py-1.5 text-[13px] bg-bg outline-none focus:ring-2 focus:ring-action-blue/30 focus:border-action-blue"
                               />
                             </div>
                           </div>
@@ -208,22 +210,19 @@ export default function ChecklistPage() {
       </div>
 
       {/* בר תחתון קבוע */}
-      <div className="fixed bottom-0 left-0 right-[240px] bg-white border-t border-border px-8 py-4 flex items-center justify-between z-30">
-        <div className="flex items-center gap-6 text-[14px]">
-          <span className="text-text-secondary">
-            סה"כ: <strong className="text-text-primary">{totalItems}</strong>
-          </span>
+      <div className="fixed bottom-0 left-0 right-0 lg:right-[240px] bg-white border-t border-border px-4 lg:px-8 py-3 lg:py-4 flex items-center justify-between z-30">
+        <div className="flex items-center gap-3 lg:gap-6 text-[12px] lg:text-[14px]">
           <span className="text-success">
             תקין: <strong>{passCount}</strong>
           </span>
           <span className="text-error">
             לא תקין: <strong>{failCount}</strong>
           </span>
-          <span className="text-text-secondary">
+          <span className="text-text-secondary hidden sm:inline">
             נותרו: <strong>{totalItems - checkedItems}</strong>
           </span>
         </div>
-        <button className="bg-action-blue hover:bg-action-blue/90 text-white px-8 py-2.5 rounded-lg text-[14px] font-medium transition-all shadow-sm cursor-pointer">
+        <button className="bg-action-blue hover:bg-action-blue/90 text-white px-5 lg:px-8 py-2 lg:py-2.5 rounded-lg text-[13px] lg:text-[14px] font-medium transition-all shadow-sm cursor-pointer">
           שמור ביקורת
         </button>
       </div>
