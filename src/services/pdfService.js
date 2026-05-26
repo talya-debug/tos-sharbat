@@ -105,10 +105,9 @@ function buildHTML(tradeName, tradeNameEn, sections) {
     print-color-adjust:exact;
     padding:0;
   }
-  @page { size:A4; margin:12mm 14mm; }
+  @page { size:A4; margin:10mm 14mm; }
   @media print {
-    html, body { margin:0; padding:0; }
-    .footer { position:running(footer); }
+    html, body { margin:0 !important; padding:0 !important; }
   }
   .material-symbols-outlined {
     font-family:'Material Symbols Outlined';
@@ -180,47 +179,44 @@ ${sectionsHTML}
 }
 
 /**
- * ייצוא מדריך מלאכה ל-PDF באמצעות iframe מבודד
- * — מונע ירושת print CSS מהאפליקציה הראשית
+ * ייצוא מדריך מלאכה ל-PDF
+ * פותח tab חדש עם HTML מבודד ומדפיס
  */
 export function exportTradePDF(tradeName, tradeNameEn, sections) {
   const html = buildHTML(tradeName, tradeNameEn || '', sections || [])
 
-  // יצירת iframe מוסתר — מבודד לחלוטין מה-CSS של האפליקציה
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'fixed'
-  iframe.style.top = '-10000px'
-  iframe.style.left = '-10000px'
-  iframe.style.width = '210mm'
-  iframe.style.height = '297mm'
-  iframe.style.border = 'none'
-  document.body.appendChild(iframe)
+  // blob URL — מבודד לגמרי מ-CSS של האפליקציה
+  const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const printWindow = window.open(url, '_blank')
 
-  const doc = iframe.contentDocument || iframe.contentWindow.document
-  doc.open()
-  doc.write(html)
-  doc.close()
+  if (!printWindow) {
+    alert('חלון ההדפסה נחסם — אנא אפשר חלונות קופצים ונסה שנית')
+    URL.revokeObjectURL(url)
+    return
+  }
 
-  // המתנה לפונטים ותמונות לפני הדפסה
-  const images = doc.querySelectorAll('img')
-  const imagePromises = Array.from(images).map(img =>
-    new Promise(resolve => {
-      if (img.complete) return resolve()
-      img.onload = resolve
-      img.onerror = resolve
+  printWindow.addEventListener('afterprint', () => {
+    printWindow.close()
+    URL.revokeObjectURL(url)
+  })
+
+  // המתנה לטעינה מלאה לפני הדפסה
+  printWindow.addEventListener('load', () => {
+    const images = printWindow.document.querySelectorAll('img')
+    const imagePromises = Array.from(images).map(img =>
+      new Promise(resolve => {
+        if (img.complete) return resolve()
+        img.onload = resolve
+        img.onerror = resolve
+      })
+    )
+
+    Promise.all([
+      printWindow.document.fonts?.ready || Promise.resolve(),
+      ...imagePromises,
+    ]).then(() => {
+      setTimeout(() => printWindow.print(), 400)
     })
-  )
-
-  Promise.all([
-    doc.fonts?.ready || Promise.resolve(),
-    ...imagePromises,
-  ]).then(() => {
-    setTimeout(() => {
-      iframe.contentWindow.print()
-      // ניקוי ה-iframe אחרי ההדפסה
-      setTimeout(() => {
-        document.body.removeChild(iframe)
-      }, 2000)
-    }, 600)
   })
 }
