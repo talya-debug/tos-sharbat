@@ -1,5 +1,6 @@
-// ייצוא PDF — חלון הדפסה עם HTML מעוצב
-// לפי skill_pdf_stable: Chrome עושה הכל, RTL, page breaks, פונטים
+// ייצוא PDF — לפי skill_pdf_stable
+// Puppeteer + Chrome headless בצד שרת
+// CSS: לא flexbox מורכב, page-break-inside: avoid, Heebo מוטמע, A4
 
 const SECTION_COLOR_MAP = {
   'לפני ביצוע': '#405c9c',
@@ -42,42 +43,48 @@ function buildSectionsHTML(sections) {
 
     const itemsHTML = (section.items || []).map((item, iIdx) => {
       const imgCount = item.images?.length || 0
+      // תמונות: לא flexbox — table layout פשוט
       const imagesHTML = (imgCount > 0)
-        ? `<div style="display:grid;grid-template-columns:${imgCount === 1 ? '1fr' : 'repeat(2, 1fr)'};gap:10px;margin:10px 0 4px 0;padding-right:52px;">
+        ? `<table style="margin:8px 0 4px 52px;border-spacing:8px;">
+            <tr>
             ${item.images.map((src, imgI) => `
-              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#f8fafc;">
-                <img src="${src}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;" />
-                <div style="padding:3px 8px;font-size:10px;color:#94a3b8;text-align:center;">תמונה ${imgI + 1}</div>
-              </div>
+              <td style="vertical-align:top;">
+                <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;background:#f8fafc;width:${imgCount === 1 ? '300px' : '200px'};">
+                  <img src="${src}" style="width:100%;height:auto;display:block;" />
+                  <div style="padding:2px 6px;font-size:9px;color:#94a3b8;text-align:center;">תמונה ${imgI + 1}</div>
+                </div>
+              </td>
             `).join('')}
-           </div>`
+            </tr>
+           </table>`
         : ''
 
-      const isLast = iIdx === section.items.length - 1
-
       return `
-        <div style="display:flex;align-items:flex-start;gap:12px;position:relative;${!isLast ? 'padding-bottom:10px;' : ''}">
-          ${!isLast ? `<div style="position:absolute;right:19px;top:42px;bottom:0;width:2px;background:${color}20;"></div>` : ''}
-          <div style="min-width:40px;width:40px;height:40px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;position:relative;z-index:1;">
-            ${item.displayId || iIdx + 1}
-          </div>
-          <div style="flex:1;padding-top:8px;">
-            <div style="font-size:14px;line-height:1.8;color:#1e293b;">${item.text || ''}</div>
-            ${imagesHTML}
-          </div>
+        <div style="page-break-inside:avoid;margin-bottom:8px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="width:40px;vertical-align:top;padding-top:2px;">
+                <div style="width:32px;height:32px;border-radius:50%;background:${color};color:#fff;text-align:center;line-height:32px;font-weight:700;font-size:14px;">
+                  ${item.displayId || iIdx + 1}
+                </div>
+              </td>
+              <td style="vertical-align:top;padding:4px 0;">
+                <div style="font-size:13px;line-height:1.7;color:#1e293b;">${item.text || ''}</div>
+                ${imagesHTML}
+              </td>
+            </tr>
+          </table>
+          ${iIdx < section.items.length - 1 ? '<div style="border-bottom:1px solid #f1f5f9;margin:4px 0 4px 40px;"></div>' : ''}
         </div>
       `
     }).join('')
 
     return `
-      <div style="break-inside:avoid;margin-bottom:24px;">
-        <div style="background:${color};border-radius:8px;padding:10px 18px;display:flex;align-items:center;gap:10px;margin-bottom:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-          <span class="material-symbols-outlined" style="color:#fff;font-size:22px;">${icon}</span>
-          <span style="color:#fff;font-weight:700;font-size:17px;">${section.title}</span>
+      <div style="page-break-inside:avoid;margin-bottom:20px;">
+        <div style="background:${color};border-radius:6px;padding:8px 14px;margin-bottom:10px;">
+          <span style="color:#fff;font-weight:700;font-size:15px;">${section.title}</span>
         </div>
-        <div style="padding:0 8px;">
-          ${itemsHTML}
-        </div>
+        ${itemsHTML}
       </div>
     `
   }).join('')
@@ -86,92 +93,64 @@ function buildSectionsHTML(sections) {
 function buildHTML(tradeName, tradeNameEn, sections) {
   const sectionsHTML = buildSectionsHTML(sections)
 
+  // לפי הסקיל: Heebo מ-CDN עם networkidle0, dir=rtl, לא flexbox מורכב
   return `<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>${tradeName} - מדריך ביצוע</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html { direction:rtl; }
-  body {
-    font-family:'Heebo',sans-serif;
+  html, body {
+    font-family:'Heebo', sans-serif;
     direction:rtl;
     background:#fff;
     color:#1e293b;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-    padding:0;
-  }
-  @page { size:A4; margin:10mm 14mm; }
-  @media print {
-    html, body { margin:0 !important; padding:0 !important; }
-  }
-  .material-symbols-outlined {
-    font-family:'Material Symbols Outlined';
-    font-weight:normal;font-style:normal;font-size:24px;
-    line-height:1;letter-spacing:normal;text-transform:none;
-    display:inline-block;white-space:nowrap;word-wrap:normal;
-    direction:ltr;-webkit-font-smoothing:antialiased;
+    font-size:13px;
+    line-height:1.5;
   }
 
-  /* כותרת */
   .header {
     text-align:center;
     border-bottom:2px solid #1e3a5f;
-    padding-bottom:14px;
-    margin-bottom:24px;
+    padding-bottom:12px;
+    margin-bottom:20px;
   }
   .header-trade {
-    font-size:28px;
+    font-size:26px;
     font-weight:800;
     color:#1e3a5f;
-    margin-bottom:4px;
+    margin-bottom:2px;
   }
-  .header-row {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-  }
-  .header-logo {
-    font-size:13px;
-    font-weight:700;
-    color:#1e3a5f;
-    letter-spacing:1px;
-  }
-  .header-sub {
+  .header-meta {
     font-size:11px;
     color:#94a3b8;
   }
+  .header-meta span {
+    margin:0 8px;
+  }
 
-  /* פוטר */
   .footer {
     text-align:center;
-    font-size:9px;
+    font-size:8px;
     color:#94a3b8;
-    padding:20px 0 0;
-    margin-top:30px;
+    padding-top:16px;
+    margin-top:24px;
     border-top:1px solid #e5e7eb;
   }
 </style>
 </head>
 <body>
 
-<!-- כותרת -->
 <div class="header">
   <div class="header-trade">${tradeName}</div>
-  <div class="header-row">
-    <div class="header-logo">TOS</div>
-    <div class="header-sub">מדריך ביצוע ובקרת איכות</div>
+  <div class="header-meta">
+    <span>TOS</span>|<span>מדריך ביצוע ובקרת איכות</span>
   </div>
 </div>
 
-<!-- תוכן -->
 ${sectionsHTML}
 
-<!-- פוטר -->
 <div class="footer">מסמך זה הופק באמצעות מערכת TOS — לשימוש פנימי בלבד</div>
 
 </body>
@@ -180,43 +159,35 @@ ${sectionsHTML}
 
 /**
  * ייצוא מדריך מלאכה ל-PDF
- * פותח tab חדש עם HTML מבודד ומדפיס
+ * שולח HTML ל-API route שמריץ Puppeteer
  */
-export function exportTradePDF(tradeName, tradeNameEn, sections) {
+export async function exportTradePDF(tradeName, tradeNameEn, sections) {
   const html = buildHTML(tradeName, tradeNameEn || '', sections || [])
 
-  // blob URL — מבודד לגמרי מ-CSS של האפליקציה
-  const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const printWindow = window.open(url, '_blank')
-
-  if (!printWindow) {
-    alert('חלון ההדפסה נחסם — אנא אפשר חלונות קופצים ונסה שנית')
-    URL.revokeObjectURL(url)
-    return
-  }
-
-  printWindow.addEventListener('afterprint', () => {
-    printWindow.close()
-    URL.revokeObjectURL(url)
-  })
-
-  // המתנה לטעינה מלאה לפני הדפסה
-  printWindow.addEventListener('load', () => {
-    const images = printWindow.document.querySelectorAll('img')
-    const imagePromises = Array.from(images).map(img =>
-      new Promise(resolve => {
-        if (img.complete) return resolve()
-        img.onload = resolve
-        img.onerror = resolve
-      })
-    )
-
-    Promise.all([
-      printWindow.document.fonts?.ready || Promise.resolve(),
-      ...imagePromises,
-    ]).then(() => {
-      setTimeout(() => printWindow.print(), 400)
+  try {
+    const res = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html }),
     })
-  })
+
+    if (!res.ok) {
+      const err = await res.text()
+      throw new Error(err)
+    }
+
+    // הורדת הקובץ
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${tradeName} - מדריך ביצוע.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('שגיאה בייצוא PDF:', err)
+    alert('שגיאה בייצוא PDF: ' + err.message)
+  }
 }
