@@ -136,7 +136,11 @@ function buildHTML(tradeName, tradeNameEn, sections) {
   .cover-bottom { display:flex; justify-content:space-between; align-items:flex-end; font-size:11px; color:#64748b; }
 
   /* כותרת עליונה */
-  .header { display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #e2e8f0; padding-bottom:8px; margin-bottom:20px; font-size:11px; color:#94a3b8; }
+  .header { text-align:center; border-bottom:2px solid #1e3a5f; padding-bottom:16px; margin-bottom:28px; }
+  .header-trade { font-size:28px; font-weight:800; color:#1e3a5f; margin-bottom:4px; }
+  .header-row { display:flex; justify-content:space-between; align-items:center; }
+  .header-logo { font-size:13px; font-weight:700; color:#1e3a5f; letter-spacing:1px; }
+  .header-sub { font-size:11px; color:#94a3b8; }
 
   /* פוטר */
   .footer { position:fixed; bottom:0; left:0; right:0; text-align:center; font-size:9px; color:#94a3b8; padding:8px 0; }
@@ -156,9 +160,11 @@ function buildHTML(tradeName, tradeNameEn, sections) {
 <!-- תוכן -->
 <div>
   <div class="header">
-    <div>TOS | בקרת איכות בנייה</div>
-    <div style="font-weight:600;color:#334155;">${tradeName}</div>
-    <div></div>
+    <div class="header-trade">${tradeName}</div>
+    <div class="header-row">
+      <div class="header-logo">TOS</div>
+      <div class="header-sub">מדריך ביצוע ובקרת איכות</div>
+    </div>
   </div>
   ${sectionsHTML}
 </div>
