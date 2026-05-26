@@ -60,9 +60,15 @@ function buildSectionsHTML(sections) {
     const color = getSectionColor(section.title, idx)
     const icon = getMaterialIcon(section.icon)
     const itemsHTML = (section.items || []).map((item, iIdx) => {
-      const imagesHTML = (item.images && item.images.length > 0)
-        ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 6px 48px;">
-            ${item.images.map(src => `<img src="${src}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;" />`).join('')}
+      const imgCount = item.images?.length || 0
+      const imagesHTML = (imgCount > 0)
+        ? `<div style="display:grid;grid-template-columns:${imgCount === 1 ? '1fr' : 'repeat(2, 1fr)'};gap:10px;margin:10px 0 6px 48px;">
+            ${item.images.map((src, imgI) => `
+              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#f8fafc;">
+                <img src="${src}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;" />
+                <div style="padding:4px 8px;font-size:10px;color:#94a3b8;text-align:center;">תמונה ${imgI + 1}</div>
+              </div>
+            `).join('')}
            </div>`
         : ''
       const isLast = iIdx === section.items.length - 1
