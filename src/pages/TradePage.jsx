@@ -291,7 +291,8 @@ export default function TradePage() {
       // העלאה ל-Supabase Storage
       const [sectionId, itemId] = activeUploadKey.split('|')
       try {
-        const path = `${tradeId}/${sectionId}/${Date.now()}_${file.name}`
+        const ext = file.name.split('.').pop() || 'jpg'
+        const path = `${tradeId}/${sectionId}/${Date.now()}.${ext}`
         const publicUrl = await uploadImage(file, path)
         // עדכון ה-images array ב-DB
         const currentItem = (sectionItems[sectionId] || []).find(i => i.id === itemId)
