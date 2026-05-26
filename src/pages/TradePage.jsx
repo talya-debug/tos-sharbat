@@ -368,7 +368,7 @@ export default function TradePage() {
         <div className="flex items-center gap-3">
           {/* כפתור ייצוא PDF */}
           <button
-            onClick={() => exportTradePDF(tradeName)}
+            onClick={() => exportTradePDF(tradeName, displayTrade.name_en || '', displaySections)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border text-text-secondary hover:text-primary hover:border-primary/30 text-[13px] font-medium transition-all"
           >
             <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
