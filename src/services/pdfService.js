@@ -105,9 +105,10 @@ function buildHTML(tradeName, tradeNameEn, sections) {
     print-color-adjust:exact;
     padding:0;
   }
-  @page { size:A4; margin:15mm 16mm; }
+  @page { size:A4; margin:12mm 14mm; }
   @media print {
-    body { margin:0; padding:0; }
+    html, body { margin:0; padding:0; }
+    .footer { position:running(footer); }
   }
   .material-symbols-outlined {
     font-family:'Material Symbols Outlined';
@@ -148,12 +149,12 @@ function buildHTML(tradeName, tradeNameEn, sections) {
 
   /* פוטר */
   .footer {
-    position:fixed;
-    bottom:0;left:0;right:0;
     text-align:center;
     font-size:9px;
     color:#94a3b8;
-    padding:6px 0;
+    padding:20px 0 0;
+    margin-top:30px;
+    border-top:1px solid #e5e7eb;
   }
 </style>
 </head>
