@@ -305,12 +305,7 @@ export default function TradePage() {
         }))
       } catch (err) {
         console.error('שגיאה בהעלאת תמונה:', err)
-        // fallback — תמונה מקומית
-        const url = URL.createObjectURL(file)
-        setLocalImages(prev => ({
-          ...prev,
-          [activeUploadKey]: [...(prev[activeUploadKey] || []), url],
-        }))
+        alert('שגיאה בהעלאת תמונה: ' + (err?.message || err))
       }
     } else {
       const url = URL.createObjectURL(file)
@@ -344,6 +339,7 @@ export default function TradePage() {
         }))
       } catch (err) {
         console.error('שגיאה במחיקת תמונה:', err)
+        alert('שגיאה במחיקת תמונה: ' + (err?.message || err))
       }
     } else {
       const key = `${sectionId}-${itemId}`
