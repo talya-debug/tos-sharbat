@@ -47,3 +47,32 @@ body {
 .accordion-active .chevron-icon {
   transform: rotate(180deg);
 }
+
+/* סגנון הדפסה / ייצוא PDF */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* הסתרת סיידבר וניווט */
+  nav, .sidebar, [class*="sidebar"], button, input[type="file"] {
+    display: none !important;
+  }
+
+  /* פתיחת כל האקורדיונים */
+  .accordion-content {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .chevron-icon {
+    display: none !important;
+  }
+
+  /* הסתרת כפתורים */
+  button:not(.print-visible) {
+    display: none !important;
+  }
+}

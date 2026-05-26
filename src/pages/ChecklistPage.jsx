@@ -1,7 +1,10 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useState } from 'react'
-import { trades } from '../data/trades'
+import { useState, useEffect } from 'react'
+import { trades as staticTrades } from '../data/trades'
 import { tradeData } from '../data/tradeData'
+import { getTrade } from '../services/tradeService'
+import { getSections } from '../services/sectionService'
+import { getItems } from '../services/itemService'
 
 /* מיפוי אייקונים */
 const iconMap = {
@@ -24,6 +27,8 @@ const iconMap = {
   Target: 'gps_fixed',
   Zap: 'bolt',
   Info: 'info',
+  XCircle: 'cancel',
+  Search: 'search',
 }
 
 const sectionColors = [
@@ -34,21 +39,60 @@ export default function ChecklistPage() {
   const { tradeId } = useParams()
   const navigate = useNavigate()
   const [openSections, setOpenSections] = useState([0])
-  const [results, setResults] = useState({}) // { "sectionId-itemId": "pass" | "fail" }
+  const [results, setResults] = useState({})
   const [notes, setNotes] = useState({})
+  const [loading, setLoading] = useState(true)
 
-  const trade = trades.find(t => t.id === tradeId)
-  const data = tradeData[tradeId]
+  const [tradeName, setTradeName] = useState('')
+  const [displaySections, setDisplaySections] = useState([])
 
-  if (!trade || !data) {
-    return <p className="text-text-secondary">מלאכה לא נמצאה</p>
+  useEffect(() => {
+    loadData()
+  }, [tradeId])
+
+  async function loadData() {
+    setLoading(true)
+    try {
+      const sbTrade = await getTrade(tradeId)
+      if (sbTrade) {
+        setTradeName(sbTrade.name)
+        const sbSections = await getSections(tradeId)
+        // טעינת פריטים
+        const sectionsWithItems = await Promise.all(sbSections.map(async (sec) => {
+          const items = await getItems(sec.id)
+          return {
+            ...sec,
+            items: items.map((item, idx) => ({ ...item, displayId: idx + 1 })),
+          }
+        }))
+        // סינון פרק "לפני ביצוע" ע"פ שם
+        setDisplaySections(sectionsWithItems.filter(s =>
+          s.title !== 'לפני ביצוע' && s.title_en !== 'Before Execution'
+        ))
+        setLoading(false)
+        return
+      }
+    } catch {}
+
+    // fallback
+    const st = staticTrades.find(t => t.id === tradeId)
+    const sd = tradeData[tradeId]
+    if (st && sd) {
+      setTradeName(st.name)
+      setDisplaySections(
+        sd.sections
+          .filter(s => s.id !== 'before')
+          .map(s => ({
+            ...s,
+            items: s.items.map(item => ({ ...item, displayId: item.id })),
+          }))
+      )
+    }
+    setLoading(false)
   }
 
-  // סינון סקשן "לפני ביצוע"
-  const sections = data.sections.filter(s => s.id !== 'before')
-
   // ספירת סה"כ פריטים ותוצאות
-  const totalItems = sections.reduce((sum, s) => sum + s.items.length, 0)
+  const totalItems = displaySections.reduce((sum, s) => sum + s.items.length, 0)
   const checkedItems = Object.keys(results).length
   const passCount = Object.values(results).filter(v => v === 'pass').length
   const failCount = Object.values(results).filter(v => v === 'fail').length
@@ -69,6 +113,18 @@ export default function ChecklistPage() {
     setNotes(prev => ({ ...prev, [`${sectionId}-${itemId}`]: value }))
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
+  if (!tradeName) {
+    return <p className="text-text-secondary">מלאכה לא נמצאה</p>
+  }
+
   return (
     <div className="pb-24">
       {/* ברדקראמב + טוגל */}
@@ -79,9 +135,9 @@ export default function ChecklistPage() {
             <span className="material-symbols-outlined text-[12px]">chevron_left</span>
             <Link to="/dashboard" className="hover:text-primary transition-colors">ניהול מלאכות</Link>
             <span className="material-symbols-outlined text-[12px]">chevron_left</span>
-            <span className="text-primary font-medium">{trade.name}</span>
+            <span className="text-primary font-medium">{tradeName}</span>
           </nav>
-          <h2 className="text-[24px] lg:text-[32px] leading-[32px] lg:leading-[40px] font-bold text-text-primary">{trade.name}</h2>
+          <h2 className="text-[24px] lg:text-[32px] leading-[32px] lg:leading-[40px] font-bold text-text-primary">{tradeName}</h2>
         </div>
 
         <div className="bg-bg p-1 rounded-full flex gap-1 shadow-sm border border-border self-start">
@@ -116,7 +172,7 @@ export default function ChecklistPage() {
 
       {/* אקורדיון בקרת איכות */}
       <div className="max-w-4xl space-y-4">
-        {sections.map((section, idx) => {
+        {displaySections.map((section, idx) => {
           const isOpen = openSections.includes(idx)
           const materialIcon = iconMap[section.icon] || 'folder'
           const color = sectionColors[(idx + 1) % sectionColors.length]
@@ -156,7 +212,7 @@ export default function ChecklistPage() {
                             className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white mt-0.5"
                             style={{ backgroundColor: color }}
                           >
-                            {item.id}
+                            {item.displayId}
                           </span>
                           <div className="flex-1">
                             <p className="text-[16px] text-text-primary mb-3">{item.text}</p>
