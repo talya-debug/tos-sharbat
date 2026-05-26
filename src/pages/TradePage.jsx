@@ -4,7 +4,7 @@ import { trades as staticTrades } from '../data/trades'
 import { tradeData } from '../data/tradeData'
 import { getTrade } from '../services/tradeService'
 import { getSections, createSection, deleteSection } from '../services/sectionService'
-import { getItems, createItem, updateItem, deleteItem } from '../services/itemService'
+import { getItems, createItem, updateItem, deleteItem, reorderItems } from '../services/itemService'
 import { uploadImage, deleteImage } from '../services/storageService'
 import { exportTradePDF } from '../services/pdfService'
 
@@ -268,6 +268,29 @@ export default function TradePage() {
     }
   }
 
+  // --- הזזת פריט למעלה/למטה ---
+  async function handleMoveItem(sectionId, itemIdx, direction) {
+    if (!useSupabase) return
+    const items = sectionItems[sectionId] || []
+    const newIdx = itemIdx + direction
+    if (newIdx < 0 || newIdx >= items.length) return
+
+    const newItems = [...items]
+    const [moved] = newItems.splice(itemIdx, 1)
+    newItems.splice(newIdx, 0, moved)
+
+    // עדכון מקומי מיידי
+    setSectionItems(prev => ({ ...prev, [sectionId]: newItems }))
+
+    // עדכון DB
+    try {
+      await reorderItems(sectionId, newItems.map(i => i.id))
+    } catch (err) {
+      console.error('שגיאה בסידור:', err)
+      setSectionItems(prev => ({ ...prev, [sectionId]: items }))
+    }
+  }
+
   // --- תמונות ---
   function getItemImages(sectionId, item) {
     if (useSupabase) {
@@ -497,15 +520,33 @@ export default function TradePage() {
                               </button>
                             </div>
                           </div>
-                          {/* כפתור מחיקת פריט */}
+                          {/* כפתורי סידור + מחיקה */}
                           {useSupabase && (
-                            <button
-                              onClick={() => handleDeleteItem(item.id, sectionId)}
-                              className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-text-secondary hover:text-error hover:bg-error/10 transition-all opacity-0 group-hover:opacity-100"
-                              title="מחק פריט"
-                            >
-                              <span className="material-symbols-outlined text-[16px]">close</span>
-                            </button>
+                            <div className="flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+                              <button
+                                onClick={() => handleMoveItem(sectionId, itemIdx, -1)}
+                                disabled={itemIdx === 0}
+                                className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-primary hover:bg-primary/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                title="הזז למעלה"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">keyboard_arrow_up</span>
+                              </button>
+                              <button
+                                onClick={() => handleMoveItem(sectionId, itemIdx, 1)}
+                                disabled={itemIdx === section.items.length - 1}
+                                className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-primary hover:bg-primary/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                title="הזז למטה"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteItem(item.id, sectionId)}
+                                className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-error hover:bg-error/10 transition-all"
+                                title="מחק פריט"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">close</span>
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
