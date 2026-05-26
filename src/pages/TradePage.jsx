@@ -3,6 +3,29 @@ import { useState, useRef } from 'react'
 import { trades } from '../data/trades'
 import { tradeData } from '../data/tradeData'
 
+/*
+ * תמונות מהאקסלים — ממופות לסעיף + פריט
+ * מפתח: "tradeId/sectionId-itemId"
+ */
+const defaultImages = {
+  // טיח פנים — שלבי ביצוע: תמונות 1-6 מתאימות לפריטים 2-8
+  'interior-plaster/execution-2': ['/images/plaster/image1.png'],    // הצבת מיקים — תמונה 1
+  'interior-plaster/execution-3': ['/images/plaster/image2.jpeg'],   // יישום הטיח — תמונה 2
+  'interior-plaster/execution-5': ['/images/plaster/image3.jpeg'],   // יישור בסרגל — תמונה 3
+  'interior-plaster/execution-6': ['/images/plaster/image4.jpeg'],   // גריד שכבת מילוי — תמונה 4
+  'interior-plaster/execution-7': ['/images/plaster/image5.png'],    // שכבת החלקה — תמונה 5
+  'interior-plaster/execution-8': ['/images/plaster/image6.png'],    // שפשוף סיבובי — תמונה 6
+  // טיח פנים — מגבלות: תמונה 8 לממ"ד
+  'interior-plaster/limitations-5': ['/images/plaster/image8.png'],  // טיח בממ"ד — תמונה 8
+  // טיח פנים — אופן מדידת סטיות: תמונה 7
+  'interior-plaster/measurement-1': ['/images/plaster/image7.jpeg'], // מדידת סטיות — תמונה 7
+  // איטום חדרים רטובים — תרשימים כלליים
+  'waterproofing-wet-rooms/preparation-1': ['/images/waterproofing/image1.png'],  // סגירת מעטפת
+  'waterproofing-wet-rooms/execution-1': ['/images/waterproofing/image2.png'],    // הרבצה
+  'waterproofing-wet-rooms/execution-2': ['/images/waterproofing/image3.png'],    // מריחת איטום
+  'waterproofing-wet-rooms/before-1': ['/images/waterproofing/image4.png', '/images/waterproofing/image5.png'], // פתיחת מלאכה — תרשימים
+}
+
 /* מיפוי אייקונים מ-Lucide לשמות Material Symbols */
 const iconMap = {
   ClipboardCheck: 'assignment_late',
@@ -42,7 +65,19 @@ export default function TradePage() {
   const { tradeId } = useParams()
   const navigate = useNavigate()
   const [openSections, setOpenSections] = useState([0])
-  const [images, setImages] = useState({}) // { "sectionId-itemId": [url1, url2, ...] }
+  const [images, setImages] = useState(() => {
+    // טעינת תמונות ברירת מחדל מהאקסלים
+    const defaults = {}
+    if (tradeId) {
+      Object.entries(defaultImages).forEach(([key, urls]) => {
+        if (key.startsWith(tradeId + '/')) {
+          const itemKey = key.replace(tradeId + '/', '')
+          defaults[itemKey] = [...urls]
+        }
+      })
+    }
+    return defaults
+  })
   const [lightboxImg, setLightboxImg] = useState(null)
   const fileInputRef = useRef(null)
   const [activeUploadKey, setActiveUploadKey] = useState(null)
