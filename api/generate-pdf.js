@@ -20,18 +20,24 @@ export default async function handler(req, res) {
   try {
     browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: { width: 794, height: 1123 }, // A4 at 96dpi
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     })
 
     const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'networkidle0' })
+
+    // לפי skill_pdf_stable: waitUntil networkidle0
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 20000 })
+
+    // המתנה נוספת לפונטים
+    await page.evaluateHandle('document.fonts.ready')
 
     const pdf = await page.pdf({
       format: 'A4',
-      margin: { top: '10mm', bottom: '10mm', left: '14mm', right: '14mm' },
+      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '12mm' },
       printBackground: true,
+      preferCSSPageSize: false,
     })
 
     const pdfBuffer = Buffer.from(pdf)
