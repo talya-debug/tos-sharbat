@@ -48,25 +48,18 @@ function buildSectionsHTML(sections) {
     const itemsHTML = (section.items || []).map((item, iIdx) => {
       const images = (item.images || []).map(toAbsoluteUrl)
 
-      // תמונות: תמונה בודדת = רוחב 280px (חצי עמוד), מרובות = 2 בשורה 200px כ"א
+      // תמונות: כל תמונה ברוחב מלא, אחת מתחת לשנייה — חוברת הדרכה, הקריאות חשובה
       let imagesHTML = ''
       if (images.length > 0) {
-        const imgWidth = images.length === 1 ? 280 : 200
-        const imgMaxHeight = images.length === 1 ? 350 : 250
-        const imgRows = []
-        for (let r = 0; r < images.length; r += 2) {
-          const rowImgs = images.slice(r, r + 2)
-          const cells = rowImgs.map((src, ci) =>
-            '<td style="vertical-align:top;padding:4px;">' +
-              '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#f9fafb;width:' + imgWidth + 'px;">' +
-                '<img src="' + src + '" style="width:100%;max-height:' + imgMaxHeight + 'px;object-fit:contain;display:block;" />' +
-                '<div style="padding:2px 6px;font-size:9px;color:#9ca3af;text-align:center;">תמונה ' + (r + ci + 1) + '</div>' +
-              '</div>' +
-            '</td>'
-          ).join('')
-          imgRows.push('<tr>' + cells + '</tr>')
-        }
-        imagesHTML = '<table style="margin:10px 0 6px 42px;border-spacing:0;">' + imgRows.join('') + '</table>'
+        const imgItems = images.map((src, imgI) =>
+          '<div style="margin:8px 0;page-break-inside:avoid;">' +
+            '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#f9fafb;">' +
+              '<img src="' + src + '" style="width:100%;height:auto;display:block;" />' +
+              '<div style="padding:3px 8px;font-size:9px;color:#9ca3af;text-align:center;">תמונה ' + (imgI + 1) + '</div>' +
+            '</div>' +
+          '</div>'
+        ).join('')
+        imagesHTML = '<div style="margin:10px 0 6px 42px;">' + imgItems + '</div>'
       }
 
       const divider = iIdx < section.items.length - 1
