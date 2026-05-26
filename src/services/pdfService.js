@@ -180,22 +180,29 @@ ${sectionsHTML}
 }
 
 /**
- * ייצוא מדריך מלאכה ל-PDF
+ * ייצוא מדריך מלאכה ל-PDF באמצעות iframe מבודד
+ * — מונע ירושת print CSS מהאפליקציה הראשית
  */
 export function exportTradePDF(tradeName, tradeNameEn, sections) {
   const html = buildHTML(tradeName, tradeNameEn || '', sections || [])
 
-  const printWindow = window.open('', '_blank', 'width=900,height=700')
-  if (!printWindow) {
-    alert('חלון ההדפסה נחסם — אנא אפשר חלונות קופצים ונסה שנית')
-    return
-  }
+  // יצירת iframe מוסתר — מבודד לחלוטין מה-CSS של האפליקציה
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.top = '-10000px'
+  iframe.style.left = '-10000px'
+  iframe.style.width = '210mm'
+  iframe.style.height = '297mm'
+  iframe.style.border = 'none'
+  document.body.appendChild(iframe)
 
-  printWindow.document.write(html)
-  printWindow.document.close()
+  const doc = iframe.contentDocument || iframe.contentWindow.document
+  doc.open()
+  doc.write(html)
+  doc.close()
 
   // המתנה לפונטים ותמונות לפני הדפסה
-  const images = printWindow.document.querySelectorAll('img')
+  const images = doc.querySelectorAll('img')
   const imagePromises = Array.from(images).map(img =>
     new Promise(resolve => {
       if (img.complete) return resolve()
@@ -205,11 +212,15 @@ export function exportTradePDF(tradeName, tradeNameEn, sections) {
   )
 
   Promise.all([
-    printWindow.document.fonts?.ready || Promise.resolve(),
+    doc.fonts?.ready || Promise.resolve(),
     ...imagePromises,
   ]).then(() => {
     setTimeout(() => {
-      printWindow.print()
-    }, 500)
+      iframe.contentWindow.print()
+      // ניקוי ה-iframe אחרי ההדפסה
+      setTimeout(() => {
+        document.body.removeChild(iframe)
+      }, 2000)
+    }, 600)
   })
 }
