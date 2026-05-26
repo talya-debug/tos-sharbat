@@ -42,22 +42,29 @@ function buildSectionsHTML(sections) {
     const icon = getMaterialIcon(section.icon)
 
     const itemsHTML = (section.items || []).map((item, iIdx) => {
-      const imgCount = item.images?.length || 0
-      // תמונות: לא flexbox — table layout פשוט
-      const imagesHTML = (imgCount > 0)
-        ? `<table style="margin:8px 0 4px 52px;border-spacing:8px;">
-            <tr>
-            ${item.images.map((src, imgI) => `
-              <td style="vertical-align:top;">
-                <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;background:#f8fafc;width:${imgCount === 1 ? '300px' : '200px'};">
-                  <img src="${src}" style="width:100%;height:auto;display:block;" />
-                  <div style="padding:2px 6px;font-size:9px;color:#94a3b8;text-align:center;">תמונה ${imgI + 1}</div>
-                </div>
-              </td>
-            `).join('')}
-            </tr>
-           </table>`
-        : ''
+      // המרת URLs יחסיים למלאים — Puppeteer צריך URL מלא
+      const fullImages = (item.images || []).map(src => {
+        if (src.startsWith('http')) return src
+        return `https://tos-app-six.vercel.app${src}`
+      })
+      const imgCount = fullImages.length
+      // תמונות: לא flexbox — table layout פשוט, עד 2 בשורה
+      let imagesHTML = ''
+      if (imgCount > 0) {
+        const rows = []
+        for (let r = 0; r < imgCount; r += 2) {
+          const rowImgs = fullImages.slice(r, r + 2)
+          rows.push(`<tr>${rowImgs.map((src, ci) => `
+            <td style="vertical-align:top;padding:4px;">
+              <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;background:#f8fafc;width:${imgCount === 1 ? '300px' : '200px'};">
+                <img src="${src}" style="width:100%;height:auto;display:block;" />
+                <div style="padding:2px 6px;font-size:9px;color:#94a3b8;text-align:center;">תמונה ${r + ci + 1}</div>
+              </div>
+            </td>
+          `).join('')}</tr>`)
+        }
+        imagesHTML = `<table style="margin:8px 0 4px 42px;border-spacing:0;">${rows.join('')}</table>`
+      }
 
       return `
         <div style="page-break-inside:avoid;margin-bottom:8px;">
