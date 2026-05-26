@@ -34,9 +34,13 @@ export default async function handler(req, res) {
       printBackground: true,
     })
 
-    res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', 'attachment; filename=trade-guide.pdf')
-    res.send(pdf)
+    const pdfBuffer = Buffer.from(pdf)
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': pdfBuffer.length,
+      'Content-Disposition': 'attachment; filename=trade-guide.pdf',
+    })
+    res.end(pdfBuffer)
   } catch (err) {
     console.error('PDF generation error:', err)
     res.status(500).json({ error: err.message })
