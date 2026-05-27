@@ -108,20 +108,36 @@ function buildHTML(tradeName, tradeNameEn, sections) {
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
 'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:13px;line-height:1.5;}' +
-'.header{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:12px;margin-bottom:20px;}' +
-'.header-trade{font-size:26px;font-weight:800;color:#1e3a5f;margin-bottom:2px;}' +
-'.header-meta{font-size:11px;color:#94a3b8;}' +
-'.header-meta span{margin:0 6px;}' +
-'.footer{text-align:center;font-size:8px;color:#94a3b8;padding-top:14px;margin-top:20px;border-top:1px solid #e5e7eb;}' +
+'.header{border-bottom:2px solid #1e3a5f;padding-bottom:14px;margin-bottom:22px;}' +
+'.header-trade{font-size:26px;font-weight:800;color:#1e3a5f;margin-bottom:4px;text-align:center;}' +
+'.header-meta{font-size:11px;color:#94a3b8;display:table;width:100%;}' +
+'.header-meta-right{display:table-cell;text-align:right;font-weight:600;color:#1e3a5f;font-size:12px;}' +
+'.header-meta-left{display:table-cell;text-align:left;color:#94a3b8;}' +
+'.footer{margin-top:24px;border-top:2px solid #1e3a5f;padding-top:12px;}' +
+'.footer-inner{display:table;width:100%;}' +
+'.footer-logos{display:table-cell;text-align:right;vertical-align:middle;}' +
+'.footer-logos img{height:32px;margin-left:12px;vertical-align:middle;}' +
+'.footer-text{display:table-cell;text-align:left;vertical-align:middle;font-size:8px;color:#94a3b8;}' +
 '</style>' +
 '</head>' +
 '<body>' +
 '<div class="header">' +
   '<div class="header-trade">' + tradeName + '</div>' +
-  '<div class="header-meta"><span>TOS</span>|<span>מדריך ביצוע ובקרת איכות</span></div>' +
+  '<div class="header-meta">' +
+    '<div class="header-meta-right">TOS — מדריך ביצוע ובקרת איכות</div>' +
+    '<div class="header-meta-left">מערכת ניהול איכות בבנייה</div>' +
+  '</div>' +
 '</div>' +
 sectionsHTML +
-'<div class="footer">מסמך זה הופק באמצעות מערכת TOS — לשימוש פנימי בלבד</div>' +
+'<div class="footer">' +
+  '<div class="footer-inner">' +
+    '<div class="footer-logos">' +
+      '<img src="https://tos-app-six.vercel.app/images/logo1.jpeg" />' +
+      '<img src="https://tos-app-six.vercel.app/images/logo2.png" />' +
+    '</div>' +
+    '<div class="footer-text">מסמך זה הופק באמצעות מערכת TOS — לשימוש פנימי בלבד</div>' +
+  '</div>' +
+'</div>' +
 '</body>' +
 '</html>'
 }
