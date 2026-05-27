@@ -132,6 +132,10 @@ function buildHTML(tradeName, sections) {
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
 'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:12px;line-height:1.4;}' +
+'body{padding:0 6px;}' +
+'.last-page{page-break-before:always;min-height:calc(100vh - 20mm);display:table;width:100%;}' +
+'.last-page-footer{display:table-row;height:1px;}' +
+'.last-page-footer td{vertical-align:bottom;padding-top:20px;}' +
 '</style>' +
 '</head>' +
 '<body>' +
@@ -144,8 +148,8 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:24px;font-weight:800;color:#1e3a5f;">' + tradeName + '</div>' +
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
-      '<td style="text-align:left;vertical-align:middle;width:90px;">' +
-        '<img src="' + LOGO_PISGAT + '" style="height:70px;" />' +
+      '<td style="text-align:left;vertical-align:middle;width:110px;">' +
+        '<img src="' + LOGO_PISGAT + '" style="height:90px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +
@@ -154,9 +158,15 @@ function buildHTML(tradeName, sections) {
 // === תוכן ===
 sectionsHTML +
 
-// === פוטר סיום מסמך ===
-'<div style="margin-top:16px;border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
-  'הופק ע"י מערכת TOS' +
+// === עמוד אחרון עם פוטר בתחתית ===
+'<div class="last-page">' +
+  '<div class="last-page-footer">' +
+    '<table style="width:100%;"><tr><td style="vertical-align:bottom;">' +
+      '<div style="border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
+        'הופק ע"י מערכת TOS' +
+      '</div>' +
+    '</td></tr></table>' +
+  '</div>' +
 '</div>' +
 
 '</body>' +
