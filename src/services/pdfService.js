@@ -44,11 +44,13 @@ function buildItemHTML(item, iIdx, color, totalItems) {
   const images = (item.images || []).map(toAbsoluteUrl)
   let imagesHTML = ''
   if (images.length > 0) {
+    // כלל: תמונה בודדת בסעיף = 75% רוחב (חצי עמוד), יותר ברורה ופחות תלושה
+    const singleImageWidth = images.length === 1 ? '75%' : '55%'
     const rows = []
     for (let r = 0; r < images.length; r += 2) {
       const pair = images.slice(r, r + 2)
       if (pair.length === 1) {
-        rows.push('<tr><td style="width:55%;vertical-align:top;padding:3px;">' +
+        rows.push('<tr><td style="width:' + singleImageWidth + ';vertical-align:top;padding:3px;">' +
           '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
             '<img src="' + pair[0] + '" style="width:100%;height:auto;display:block;" />' +
             '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
