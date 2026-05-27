@@ -83,7 +83,7 @@ function buildItemHTML(item, iIdx, color, totalItems) {
             '</div>' +
           '</td>' +
           '<td style="vertical-align:top;padding:1px 0;">' +
-            '<div style="font-size:12px;line-height:1.6;color:#1e293b;">' + (item.text || '') + '</div>' +
+            '<div style="font-size:14px;line-height:1.6;color:#1e293b;">' + (item.text || '') + '</div>' +
             imagesHTML +
           '</td>' +
         '</tr>' +
@@ -131,7 +131,7 @@ function buildHTML(tradeName, sections) {
 '<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">' +
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
-'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:12px;line-height:1.4;}' +
+'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:14px;line-height:1.5;}' +
 '</style>' +
 '</head>' +
 '<body>' +
@@ -145,7 +145,7 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
       '<td style="text-align:left;vertical-align:middle;width:80px;">' +
-        '<img src="' + LOGO_PISGAT + '" style="height:55px;" />' +
+        '<img src="' + LOGO_PISGAT + '" style="height:75px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +
