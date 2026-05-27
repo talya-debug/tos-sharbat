@@ -48,8 +48,7 @@ function buildItemHTML(item, iIdx, color, totalItems) {
     for (let r = 0; r < images.length; r += 2) {
       const pair = images.slice(r, r + 2)
       if (pair.length === 1) {
-        // תמונה בודדת — 90% רוחב כדי שתהיה ברורה ולא תלושה
-        rows.push('<tr><td style="width:90%;vertical-align:top;padding:3px;">' +
+        rows.push('<tr><td style="width:55%;vertical-align:top;padding:3px;">' +
           '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
             '<img src="' + pair[0] + '" style="width:100%;height:auto;display:block;" />' +
             '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
@@ -78,13 +77,13 @@ function buildItemHTML(item, iIdx, color, totalItems) {
     '<div style="page-break-inside:avoid;margin-bottom:2px;">' +
       '<table style="width:100%;border-collapse:collapse;">' +
         '<tr>' +
-          '<td style="width:34px;vertical-align:top;padding-top:2px;">' +
-            '<div style="width:28px;height:28px;border-radius:50%;background:' + color + ';color:#fff;text-align:center;line-height:28px;font-weight:700;font-size:13px;">' +
+          '<td style="width:30px;vertical-align:top;padding-top:2px;">' +
+            '<div style="width:24px;height:24px;border-radius:50%;background:' + color + ';color:#fff;text-align:center;line-height:24px;font-weight:700;font-size:11px;">' +
               (item.displayId || iIdx + 1) +
             '</div>' +
           '</td>' +
           '<td style="vertical-align:top;padding:1px 0;">' +
-            '<div style="font-size:14px;line-height:1.6;color:#1e293b;">' + (item.text || '') + '</div>' +
+            '<div style="font-size:12px;line-height:1.6;color:#1e293b;">' + (item.text || '') + '</div>' +
             imagesHTML +
           '</td>' +
         '</tr>' +
@@ -114,7 +113,7 @@ function buildSectionsHTML(sections) {
     return (
       '<div style="' + style + '">' +
         '<div style="background:' + color + ';border-radius:4px;padding:5px 12px;margin-bottom:6px;">' +
-          '<span style="color:#fff;font-weight:700;font-size:16px;">' + section.title + '</span>' +
+          '<span style="color:#fff;font-weight:700;font-size:13px;">' + section.title + '</span>' +
         '</div>' +
         itemsHTML +
       '</div>'
@@ -132,7 +131,7 @@ function buildHTML(tradeName, sections) {
 '<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">' +
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
-'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:14px;line-height:1.5;padding:0 4px;}' +
+'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:12px;line-height:1.4;}' +
 '</style>' +
 '</head>' +
 '<body>' +
@@ -145,8 +144,8 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:24px;font-weight:800;color:#1e3a5f;">' + tradeName + '</div>' +
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
-      '<td style="text-align:left;vertical-align:middle;width:120px;">' +
-        '<img src="' + LOGO_PISGAT + '" style="height:100px;" />' +
+      '<td style="text-align:left;vertical-align:middle;width:80px;">' +
+        '<img src="' + LOGO_PISGAT + '" style="height:55px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +
@@ -155,7 +154,10 @@ function buildHTML(tradeName, sections) {
 // === תוכן ===
 sectionsHTML +
 
-// פוטר יוצג דרך Puppeteer displayHeaderFooter בתחתית כל עמוד אחרון
+// === פוטר סיום מסמך ===
+'<div style="margin-top:16px;border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
+  'הופק ע"י מערכת TOS' +
+'</div>' +
 
 '</body>' +
 '</html>'

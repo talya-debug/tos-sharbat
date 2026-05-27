@@ -35,11 +35,8 @@ export default async function handler(req, res) {
 
     const pdf = await page.pdf({
       format: 'A4',
-      margin: { top: '8mm', bottom: '16mm', left: '12mm', right: '14mm' },
+      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '12mm' },
       printBackground: true,
-      displayHeaderFooter: true,
-      headerTemplate: '<span></span>',
-      footerTemplate: '<div style="width:100%;text-align:center;font-size:8px;color:#94a3b8;font-family:Heebo,sans-serif;border-top:1.5px solid #1e3a5f;padding-top:4px;margin:0 14mm;">הופק ע"י מערכת TOS</div>',
     })
 
     await browser.close()
