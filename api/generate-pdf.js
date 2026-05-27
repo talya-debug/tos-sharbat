@@ -33,9 +33,26 @@ export default async function handler(req, res) {
     // המתנה נוספת לתמונות
     await new Promise(r => setTimeout(r, 2000))
 
+    // דחיפת הפוטר לתחתית העמוד האחרון
+    await page.evaluate(() => {
+      const footer = document.getElementById('tos-footer')
+      if (!footer) return
+      const pageH = (297 - 8 - 8) * (96 / 25.4) // A4 usable height in px
+      const bodyH = document.body.scrollHeight
+      const used = bodyH % pageH
+      if (used > 0) {
+        const gap = pageH - used - footer.offsetHeight
+        if (gap > 10) {
+          const s = document.createElement('div')
+          s.style.height = gap + 'px'
+          footer.parentNode.insertBefore(s, footer)
+        }
+      }
+    })
+
     const pdf = await page.pdf({
       format: 'A4',
-      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '12mm' },
+      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '14mm' },
       printBackground: true,
     })
 

@@ -48,9 +48,9 @@ function buildItemHTML(item, iIdx, color, totalItems) {
     for (let r = 0; r < images.length; r += 2) {
       const pair = images.slice(r, r + 2)
       if (pair.length === 1) {
-        rows.push('<tr><td style="width:55%;vertical-align:top;padding:3px;">' +
+        rows.push('<tr><td style="width:70%;vertical-align:top;padding:3px;">' +
           '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
-            '<img src="' + pair[0] + '" style="width:100%;height:auto;display:block;" />' +
+            '<img src="' + pair[0] + '" style="width:100%;height:280px;object-fit:cover;display:block;border-radius:3px;" />' +
             '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
           '</div>' +
         '</td><td></td></tr>')
@@ -58,7 +58,7 @@ function buildItemHTML(item, iIdx, color, totalItems) {
         const cells = pair.map((src, ci) =>
           '<td style="width:50%;vertical-align:top;padding:3px;">' +
             '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
-              '<img src="' + src + '" style="width:100%;height:auto;display:block;" />' +
+              '<img src="' + src + '" style="width:100%;height:240px;object-fit:cover;display:block;border-radius:3px;" />' +
               '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + ci + 1) + '</div>' +
             '</div>' +
           '</td>'
@@ -155,7 +155,7 @@ function buildHTML(tradeName, sections) {
 sectionsHTML +
 
 // === פוטר סיום מסמך ===
-'<div style="margin-top:16px;border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
+'<div id="tos-footer" style="margin-top:16px;border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
   'הופק ע"י מערכת TOS' +
 '</div>' +
 
