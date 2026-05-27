@@ -83,7 +83,7 @@ function buildItemHTML(item, iIdx, color, totalItems) {
             '</div>' +
           '</td>' +
           '<td style="vertical-align:top;padding:1px 0;">' +
-            '<div style="font-size:15px;line-height:1.6;color:#1e293b;">' + (item.text || '') + '</div>' +
+            '<div style="font-size:16px;line-height:1.6;color:#1e293b;">' + (item.text || '') + '</div>' +
             imagesHTML +
           '</td>' +
         '</tr>' +
@@ -131,7 +131,7 @@ function buildHTML(tradeName, sections) {
 '<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">' +
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
-'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:15px;line-height:1.55;}' +
+'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:16px;line-height:1.55;}' +
 '</style>' +
 '</head>' +
 '<body>' +
