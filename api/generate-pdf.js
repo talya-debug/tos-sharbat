@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     await page.evaluateHandle('document.fonts.ready')
 
     // המתנה קצרה נוספת שתמונות יגמרו לטעון
-    await page.waitForTimeout(1000)
+    await new Promise(r => setTimeout(r, 1500))
 
     const pdf = await page.pdf({
       format: 'A4',
