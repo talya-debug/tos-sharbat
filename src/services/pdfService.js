@@ -69,8 +69,8 @@ async function convertAllImages(sections) {
 }
 
 function buildItemHTML(item, iIdx, color, totalItems) {
-  // תמונות — 2 בשורה בטבלה, לא ברוחב מלא
-  const images = item.images || []
+  // תמונות — 2 בשורה בטבלה, URLs מלאים
+  const images = (item.images || []).map(toAbsoluteUrl)
   let imagesHTML = ''
   if (images.length > 0) {
     const rows = []
@@ -194,9 +194,8 @@ sectionsHTML +
  * ייצוא מדריך מלאכה ל-PDF
  */
 export async function exportTradePDF(tradeName, tradeNameEn, sections) {
-  // המרת כל התמונות ל-base64 בדפדפן — מונע crash של Chrome בשרת
-  const sectionsB64 = await convertAllImages(sections || [])
-  const html = buildHTML(tradeName, sectionsB64)
+  // שליחת HTML עם URLs רגילים — Chrome בשרת יוריד את התמונות
+  const html = buildHTML(tradeName, sections || [])
 
   try {
     const res = await fetch('/api/generate-pdf', {
