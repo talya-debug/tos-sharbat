@@ -33,27 +33,13 @@ export default async function handler(req, res) {
     // המתנה נוספת לתמונות
     await new Promise(r => setTimeout(r, 2000))
 
-    // דחיפת הפוטר לתחתית העמוד האחרון
-    await page.evaluate(() => {
-      const footer = document.getElementById('tos-footer')
-      if (!footer) return
-      const pageH = (297 - 8 - 8) * (96 / 25.4) // A4 usable height in px
-      const bodyH = document.body.scrollHeight
-      const used = bodyH % pageH
-      if (used > 0) {
-        const gap = pageH - used - footer.offsetHeight
-        if (gap > 10) {
-          const s = document.createElement('div')
-          s.style.height = gap + 'px'
-          footer.parentNode.insertBefore(s, footer)
-        }
-      }
-    })
-
     const pdf = await page.pdf({
       format: 'A4',
-      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '14mm' },
+      margin: { top: '8mm', bottom: '12mm', left: '12mm', right: '14mm' },
       printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: '<span></span>',
+      footerTemplate: '<div style="font-size:9px;color:#94a3b8;width:100%;text-align:center;padding-top:2px;direction:rtl;"><span style="border-top:1px solid #1e3a5f;padding-top:3px;display:inline-block;">הופק ע״י מערכת TOS</span></div>',
     })
 
     await browser.close()

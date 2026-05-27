@@ -48,17 +48,22 @@ function buildItemHTML(item, iIdx, color, totalItems) {
     for (let r = 0; r < images.length; r += 2) {
       const pair = images.slice(r, r + 2)
       if (pair.length === 1) {
-        rows.push('<tr><td style="width:70%;vertical-align:top;padding:3px;">' +
-          '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
-            '<img src="' + pair[0] + '" style="width:100%;height:280px;object-fit:cover;display:block;border-radius:3px;" />' +
-            '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
-          '</div>' +
-        '</td><td></td></tr>')
+        // תמונה בודדת — ממורכזת, אותו רוחב כמו תמונה בזוג
+        rows.push(
+          '<tr><td colspan="2" style="padding:4px;text-align:center;">' +
+            '<div style="width:50%;display:inline-block;text-align:right;">' +
+              '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#f9fafb;">' +
+                '<img src="' + pair[0] + '" style="width:100%;max-height:280px;display:block;" />' +
+                '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</td></tr>')
       } else {
+        // זוג תמונות — 50/50, אותו גובה, contain שומר על כל התמונה
         const cells = pair.map((src, ci) =>
-          '<td style="width:50%;vertical-align:top;padding:3px;">' +
-            '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
-              '<img src="' + src + '" style="width:100%;height:240px;object-fit:cover;display:block;border-radius:3px;" />' +
+          '<td style="width:50%;vertical-align:top;padding:4px;">' +
+            '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#f9fafb;">' +
+              '<img src="' + src + '" style="width:100%;height:220px;object-fit:contain;display:block;" />' +
               '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + ci + 1) + '</div>' +
             '</div>' +
           '</td>'
@@ -154,10 +159,7 @@ function buildHTML(tradeName, sections) {
 // === תוכן ===
 sectionsHTML +
 
-// === פוטר סיום מסמך ===
-'<div id="tos-footer" style="margin-top:16px;border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
-  'הופק ע"י מערכת TOS' +
-'</div>' +
+// === פוטר מנוהל ע"י Puppeteer displayHeaderFooter ===
 
 '</body>' +
 '</html>'
