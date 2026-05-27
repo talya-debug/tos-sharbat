@@ -27,14 +27,9 @@ export default async function handler(req, res) {
 
     const page = await browser.newPage()
 
-    // networkidle2 במקום networkidle0 — יותר סלחני עם תמונות חיצוניות
-    await page.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 })
-
-    // המתנה לפונטים
+    // תמונות כבר base64 — לא צריך להוריד כלום, רק פונטים
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 25000 })
     await page.evaluateHandle('document.fonts.ready')
-
-    // המתנה קצרה נוספת שתמונות יגמרו לטעון
-    await new Promise(r => setTimeout(r, 1500))
 
     const pdf = await page.pdf({
       format: 'A4',

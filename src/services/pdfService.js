@@ -46,7 +46,7 @@ function buildSectionsHTML(sections) {
     const color = getSectionColor(section.title, idx)
 
     const itemsHTML = (section.items || []).map((item, iIdx) => {
-      const images = (item.images || []).map(toAbsoluteUrl)
+      const images = item.images || []
 
       // תמונות: כל תמונה ברוחב מלא, אחת מתחת לשנייה — חוברת הדרכה, הקריאות חשובה
       let imagesHTML = ''
@@ -143,10 +143,51 @@ sectionsHTML +
 }
 
 /**
+ * המרת URL של תמונה ל-base64 data URI
+ * מונע את הצורך של Chrome להוריד תמונות — מונע crash
+ */
+async function imageToBase64(url) {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = () => resolve(url) // fallback לURL מקורי
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return url // fallback
+  }
+}
+
+/**
+ * המרת כל התמונות בסקשנים ל-base64
+ */
+async function convertImagesToBase64(sections) {
+  const converted = []
+  for (const section of sections) {
+    const newItems = []
+    for (const item of (section.items || [])) {
+      if (item.images && item.images.length > 0) {
+        const b64images = await Promise.all(item.images.map(src => imageToBase64(toAbsoluteUrl(src))))
+        newItems.push({ ...item, images: b64images })
+      } else {
+        newItems.push(item)
+      }
+    }
+    converted.push({ ...section, items: newItems })
+  }
+  return converted
+}
+
+/**
  * ייצוא PDF — שולח HTML ל-API שמריץ Puppeteer
  */
 export async function exportTradePDF(tradeName, tradeNameEn, sections) {
-  const html = buildHTML(tradeName, tradeNameEn || '', sections || [])
+  // המרת תמונות ל-base64 מראש — מונע crash של Chrome
+  const sectionsWithB64 = await convertImagesToBase64(sections || [])
+  const html = buildHTML(tradeName, tradeNameEn || '', sectionsWithB64)
 
   try {
     const res = await fetch('/api/generate-pdf', {
