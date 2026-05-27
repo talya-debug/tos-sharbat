@@ -33,9 +33,23 @@ export default async function handler(req, res) {
     // המתנה נוספת לתמונות
     await new Promise(r => setTimeout(r, 2000))
 
+    // לפי skill_pdf_stable: smart placement — פוטר בתחתית העמוד האחרון
+    await page.evaluate(() => {
+      const PAGE_H = 1123 // A4 at 96dpi
+      const footer = document.getElementById('doc-footer')
+      if (!footer) return
+      const bodyBottom = document.body.getBoundingClientRect().bottom
+      const currentPage = Math.ceil(bodyBottom / PAGE_H)
+      const pageBottom = currentPage * PAGE_H
+      const gap = pageBottom - bodyBottom - 30 // 30px margin from edge
+      if (gap > 20) {
+        footer.style.marginTop = gap + 'px'
+      }
+    })
+
     const pdf = await page.pdf({
       format: 'A4',
-      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '12mm' },
+      margin: { top: '8mm', bottom: '10mm', left: '12mm', right: '14mm' },
       printBackground: true,
     })
 

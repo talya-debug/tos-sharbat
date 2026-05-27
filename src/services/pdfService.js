@@ -48,7 +48,8 @@ function buildItemHTML(item, iIdx, color, totalItems) {
     for (let r = 0; r < images.length; r += 2) {
       const pair = images.slice(r, r + 2)
       if (pair.length === 1) {
-        rows.push('<tr><td style="width:55%;vertical-align:top;padding:3px;">' +
+        // תמונה בודדת — 70% רוחב כדי שלא תיראה תלושה בעמוד ריק
+        rows.push('<tr><td style="width:70%;vertical-align:top;padding:3px;">' +
           '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
             '<img src="' + pair[0] + '" style="width:100%;height:auto;display:block;" />' +
             '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
@@ -131,7 +132,7 @@ function buildHTML(tradeName, sections) {
 '<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">' +
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
-'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:12px;line-height:1.4;}' +
+'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:12px;line-height:1.4;padding:0 4px;}' +
 '</style>' +
 '</head>' +
 '<body>' +
@@ -144,8 +145,8 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:24px;font-weight:800;color:#1e3a5f;">' + tradeName + '</div>' +
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
-      '<td style="text-align:left;vertical-align:middle;width:80px;">' +
-        '<img src="' + LOGO_PISGAT + '" style="height:55px;" />' +
+      '<td style="text-align:left;vertical-align:middle;width:100px;">' +
+        '<img src="' + LOGO_PISGAT + '" style="height:80px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +
@@ -154,8 +155,8 @@ function buildHTML(tradeName, sections) {
 // === תוכן ===
 sectionsHTML +
 
-// === פוטר סיום מסמך ===
-'<div style="margin-top:16px;border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
+// === פוטר סיום מסמך — ימוקם בתחתית ע"י page.evaluate ===
+'<div id="doc-footer" style="border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
   'הופק ע"י מערכת TOS' +
 '</div>' +
 
