@@ -48,7 +48,7 @@ function buildItemHTML(item, iIdx, color, totalItems) {
     for (let r = 0; r < images.length; r += 2) {
       const pair = images.slice(r, r + 2)
       if (pair.length === 1) {
-        rows.push('<tr><td style="width:55%;vertical-align:top;padding:3px;">' +
+        rows.push('<tr><td style="width:80%;vertical-align:top;padding:3px;">' +
           '<div style="border:1px solid #d1d5db;border-radius:4px;overflow:hidden;background:#f9fafb;">' +
             '<img src="' + pair[0] + '" style="width:100%;height:auto;display:block;" />' +
             '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
@@ -145,7 +145,7 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
       '<td style="text-align:left;vertical-align:middle;width:80px;">' +
-        '<img src="' + LOGO_PISGAT + '" style="height:75px;" />' +
+        '<img src="' + LOGO_PISGAT + '" style="height:120px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +
@@ -154,10 +154,17 @@ function buildHTML(tradeName, sections) {
 // === תוכן ===
 sectionsHTML +
 
-// === פוטר סיום מסמך ===
-'<div style="margin-top:16px;border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
+// === פוטר — תמיד בתחתית העמוד האחרון ===
+'<div id="pdf-footer" style="border-top:2px solid #1e3a5f;padding-top:8px;text-align:center;font-size:9px;color:#94a3b8;">' +
   'הופק ע"י מערכת TOS' +
 '</div>' +
+'<script>' +
+  'var f=document.getElementById("pdf-footer");' +
+  'var bh=document.body.scrollHeight;' +
+  'var ph=Math.ceil(bh/1123)*1123;' +
+  'var gap=ph-bh-40;' +
+  'if(gap>20)f.style.marginTop=gap+"px";' +
+'</script>' +
 
 '</body>' +
 '</html>'
