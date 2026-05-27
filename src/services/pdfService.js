@@ -144,8 +144,8 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:24px;font-weight:800;color:#1e3a5f;">' + tradeName + '</div>' +
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
-      '<td style="text-align:left;vertical-align:middle;width:80px;">' +
-        '<img src="' + LOGO_PISGAT + '" style="height:55px;" />' +
+      '<td style="text-align:left;vertical-align:middle;width:90px;">' +
+        '<img src="' + LOGO_PISGAT + '" style="height:70px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +
