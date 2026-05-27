@@ -46,7 +46,7 @@ function buildSectionsHTML(sections) {
     const color = getSectionColor(section.title, idx)
 
     const itemsHTML = (section.items || []).map((item, iIdx) => {
-      const images = item.images || []
+      const images = (item.images || []).map(toAbsoluteUrl)
 
       // תמונות: כל תמונה ברוחב מלא, אחת מתחת לשנייה — חוברת הדרכה, הקריאות חשובה
       let imagesHTML = ''
@@ -108,86 +108,29 @@ function buildHTML(tradeName, tradeNameEn, sections) {
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box;}' +
 'html,body{font-family:"Heebo",sans-serif;direction:rtl;background:#fff;color:#1e293b;font-size:13px;line-height:1.5;}' +
-'.header{border-bottom:2px solid #1e3a5f;padding-bottom:14px;margin-bottom:22px;}' +
-'.header-trade{font-size:26px;font-weight:800;color:#1e3a5f;margin-bottom:4px;text-align:center;}' +
-'.header-meta{font-size:11px;color:#94a3b8;display:table;width:100%;}' +
-'.header-meta-right{display:table-cell;text-align:right;font-weight:600;color:#1e3a5f;font-size:12px;}' +
-'.header-meta-left{display:table-cell;text-align:left;color:#94a3b8;}' +
-'.footer{margin-top:24px;border-top:2px solid #1e3a5f;padding-top:12px;}' +
-'.footer-inner{display:table;width:100%;}' +
-'.footer-logos{display:table-cell;text-align:right;vertical-align:middle;}' +
-'.footer-logos img{height:32px;margin-left:12px;vertical-align:middle;}' +
-'.footer-text{display:table-cell;text-align:left;vertical-align:middle;font-size:8px;color:#94a3b8;}' +
+'.header{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:12px;margin-bottom:20px;}' +
+'.header-trade{font-size:26px;font-weight:800;color:#1e3a5f;margin-bottom:2px;}' +
+'.header-meta{font-size:11px;color:#94a3b8;}' +
+'.header-meta span{margin:0 6px;}' +
+'.footer{text-align:center;font-size:8px;color:#94a3b8;padding-top:14px;margin-top:20px;border-top:1px solid #e5e7eb;}' +
 '</style>' +
 '</head>' +
 '<body>' +
 '<div class="header">' +
   '<div class="header-trade">' + tradeName + '</div>' +
-  '<div class="header-meta">' +
-    '<div class="header-meta-right">TOS — מדריך ביצוע ובקרת איכות</div>' +
-    '<div class="header-meta-left">מערכת ניהול איכות בבנייה</div>' +
-  '</div>' +
+  '<div class="header-meta"><span>TOS</span>|<span>מדריך ביצוע ובקרת איכות</span></div>' +
 '</div>' +
 sectionsHTML +
-'<div class="footer">' +
-  '<div class="footer-inner">' +
-    '<div class="footer-logos">' +
-      '<img src="https://tos-app-six.vercel.app/images/logo1.jpeg" />' +
-      '<img src="https://tos-app-six.vercel.app/images/logo2.png" />' +
-    '</div>' +
-    '<div class="footer-text">מסמך זה הופק באמצעות מערכת TOS — לשימוש פנימי בלבד</div>' +
-  '</div>' +
-'</div>' +
+'<div class="footer">מסמך זה הופק באמצעות מערכת TOS — לשימוש פנימי בלבד</div>' +
 '</body>' +
 '</html>'
-}
-
-/**
- * המרת URL של תמונה ל-base64 data URI
- * מונע את הצורך של Chrome להוריד תמונות — מונע crash
- */
-async function imageToBase64(url) {
-  try {
-    const res = await fetch(url)
-    const blob = await res.blob()
-    return new Promise((resolve) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.onerror = () => resolve(url) // fallback לURL מקורי
-      reader.readAsDataURL(blob)
-    })
-  } catch {
-    return url // fallback
-  }
-}
-
-/**
- * המרת כל התמונות בסקשנים ל-base64
- */
-async function convertImagesToBase64(sections) {
-  const converted = []
-  for (const section of sections) {
-    const newItems = []
-    for (const item of (section.items || [])) {
-      if (item.images && item.images.length > 0) {
-        const b64images = await Promise.all(item.images.map(src => imageToBase64(toAbsoluteUrl(src))))
-        newItems.push({ ...item, images: b64images })
-      } else {
-        newItems.push(item)
-      }
-    }
-    converted.push({ ...section, items: newItems })
-  }
-  return converted
 }
 
 /**
  * ייצוא PDF — שולח HTML ל-API שמריץ Puppeteer
  */
 export async function exportTradePDF(tradeName, tradeNameEn, sections) {
-  // המרת תמונות ל-base64 מראש — מונע crash של Chrome
-  const sectionsWithB64 = await convertImagesToBase64(sections || [])
-  const html = buildHTML(tradeName, tradeNameEn || '', sectionsWithB64)
+  const html = buildHTML(tradeName, tradeNameEn || '', sections || [])
 
   try {
     const res = await fetch('/api/generate-pdf', {
