@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
     const pdf = await page.pdf({
       format: 'A4',
-      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '12mm' },
+      margin: { top: '8mm', bottom: '8mm', left: '12mm', right: '16mm' },
       printBackground: true,
     })
 
