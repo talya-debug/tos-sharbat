@@ -119,54 +119,48 @@ function estimateSectionHeight(section) {
 }
 
 function buildSectionsHTML(sections) {
+  // --- שלב 0: מיון — סקשנים עם תמונות קודם, טקסט בלבד בסוף ---
+  const withImages = sections.filter(s => sectionHasImages(s))
+  const textOnly = sections.filter(s => !sectionHasImages(s))
+  const sorted = [...withImages, ...textOnly]
+
   // --- שלב 1: הערכת גבהים והחלטה על page-breaks ---
   const PAGE_H = 1047       // A4 usable height: (297-8-12) * 96/25.4
   const DOC_HEADER_H = 180  // הדר עם לוגו
   const MIN_FILL = 0.35     // מינימום 35% מילוי עמוד כדי להצדיק שבירה
 
-  const heights = sections.map(estimateSectionHeight)
-  const shouldBreak = new Array(sections.length).fill(false)
+  const heights = sorted.map(estimateSectionHeight)
+  const shouldBreak = new Array(sorted.length).fill(false)
   let pageFill = DOC_HEADER_H
 
-  for (let i = 0; i < sections.length; i++) {
-    const hasImages = sectionHasImages(sections[i])
+  for (let i = 0; i < sorted.length; i++) {
+    const hasImages = sectionHasImages(sorted[i])
     const sH = heights[i]
 
     if (i === 0) {
-      // סקשן ראשון — אף פעם לא שובר
       pageFill += sH
       while (pageFill > PAGE_H) pageFill -= PAGE_H
       continue
     }
 
     if (hasImages && (pageFill / PAGE_H) >= MIN_FILL) {
-      // עמוד מלא מספיק — שובר לעמוד חדש
       shouldBreak[i] = true
       pageFill = sH
       while (pageFill > PAGE_H) pageFill -= PAGE_H
     } else {
-      // עמוד ריק מדי או סקשן טקסט — ממשיך ברצף
       pageFill += sH
       while (pageFill > PAGE_H) pageFill -= PAGE_H
     }
   }
 
-  // --- שלב 1.5: זיהוי בלוק טקסט אחרון ---
-  // מוצאים את כל הסקשנים האחרונים ללא תמונות ועוטפים אותם בבלוק אחד
-  // כך הם זורמים ביחד — אין שורה יתומה בעמוד אחרון
-  let trailingTextStart = sections.length
-  for (let i = sections.length - 1; i >= 0; i--) {
-    if (!sectionHasImages(sections[i])) {
-      trailingTextStart = i
-    } else {
-      break
-    }
-  }
-
   // --- שלב 2: בניית HTML ---
   let globalImgNum = 1
-  const sectionDivs = sections.map((section, idx) => {
-    const color = getSectionColor(section.title, idx)
+  const imageDivs = []
+  const textDivs = []
+
+  sorted.forEach((section, idx) => {
+    const origIdx = sections.indexOf(section)
+    const color = getSectionColor(section.title, origIdx)
     const hasImages = sectionHasImages(section)
     const itemsHTML = (section.items || []).map((item, iIdx) => {
       const html = buildItemHTML(item, iIdx, color, section.items.length, globalImgNum)
@@ -178,28 +172,28 @@ function buildSectionsHTML(sections) {
     if (shouldBreak[idx]) {
       style += 'page-break-before:always;'
     }
-    // סקשנים בתוך הבלוק האחרון — ללא break-inside:avoid (זורמים חופשי)
-    if (!hasImages && idx < trailingTextStart) {
-      style += 'page-break-inside:avoid;'
-    }
 
-    return (
+    const div =
       '<div style="' + style + '">' +
         '<div style="background:' + color + ';border-radius:4px;padding:5px 12px;margin-bottom:6px;page-break-after:avoid;">' +
           '<span style="color:#fff;font-weight:700;font-size:13px;">' + section.title + '</span>' +
         '</div>' +
         itemsHTML +
       '</div>'
-    )
+
+    if (hasImages) {
+      imageDivs.push(div)
+    } else {
+      textDivs.push(div)
+    }
   })
 
-  // עטיפת הסקשנים האחרונים בבלוק אחד
-  if (trailingTextStart < sections.length - 1) {
-    const before = sectionDivs.slice(0, trailingTextStart)
-    const trailing = sectionDivs.slice(trailingTextStart)
-    return before.join('') + '<div style="page-break-inside:avoid;">' + trailing.join('') + '</div>'
+  // סקשנים עם תמונות + בלוק טקסט אחרון עטוף ביחד
+  if (textDivs.length > 0) {
+    return imageDivs.join('') +
+      '<div style="page-break-inside:avoid;">' + textDivs.join('') + '</div>'
   }
-  return sectionDivs.join('')
+  return imageDivs.join('')
 }
 
 function buildHTML(tradeName, sections) {
