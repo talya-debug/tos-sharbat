@@ -1,11 +1,12 @@
-// ייצוא PDF — לפי skill_pdf_stable
+// ייצוא PDF — חוקים חכמים
 // כללים:
 // - הדר עמוד 1 בלבד + לוגו פסגת הנדסה משמאל
-// - פוטר סיום: "הופק ע"י מערכת TOS"
-// - קטגוריה עם תמונות = עמוד חדש
-// - קטגוריות ללא תמונות = אותו עמוד אם נכנסות (break-inside:avoid)
+// - פוטר: displayHeaderFooter ב-Puppeteer (תחתית כל עמוד)
+// - page-break חכם: רק אם העמוד הקודם מלא מספיק (>35%)
+// - כותרת קטגוריה + פריט ראשון = יחידה (לא נפרדים)
+// - קטגוריות טקסט = break-inside:avoid, זורמות ברצף
 // - סעיף+תמונות = יחידה אחת
-// - 2 תמונות בשורה
+// - 2 תמונות בשורה, בודדת ממורכזת
 
 import { LOGO_PISGAT } from './logo-base64'
 
@@ -40,7 +41,7 @@ function sectionHasImages(section) {
   return (section.items || []).some(item => item.images && item.images.length > 0)
 }
 
-function buildItemHTML(item, iIdx, color, totalItems) {
+function buildItemHTML(item, iIdx, color, totalItems, globalImgNum) {
   const images = (item.images || []).map(toAbsoluteUrl)
   let imagesHTML = ''
   if (images.length > 0) {
@@ -54,7 +55,7 @@ function buildItemHTML(item, iIdx, color, totalItems) {
             '<div style="width:50%;display:inline-block;text-align:right;">' +
               '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#f9fafb;">' +
                 '<img src="' + pair[0] + '" style="width:100%;max-height:280px;display:block;" />' +
-                '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + 1) + '</div>' +
+                '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (globalImgNum + r) + '</div>' +
               '</div>' +
             '</div>' +
           '</td></tr>')
@@ -64,7 +65,7 @@ function buildItemHTML(item, iIdx, color, totalItems) {
           '<td style="width:50%;vertical-align:top;padding:4px;">' +
             '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#f9fafb;">' +
               '<img src="' + src + '" style="width:100%;height:220px;object-fit:contain;display:block;" />' +
-              '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (r + ci + 1) + '</div>' +
+              '<div style="padding:2px 6px;font-size:8px;color:#9ca3af;text-align:center;">תמונה ' + (globalImgNum + r + ci) + '</div>' +
             '</div>' +
           '</td>'
         ).join('')
@@ -98,32 +99,107 @@ function buildItemHTML(item, iIdx, color, totalItems) {
   )
 }
 
+// הערכת גובה סקשן בפיקסלים (לחישוב page-break חכם)
+function estimateSectionHeight(section) {
+  const HEADER_H = 35
+  const TEXT_ITEM_H = 42
+  const PAIR_ROW_H = 235
+  const SINGLE_IMG_H = 200
+
+  let h = HEADER_H
+  for (const item of (section.items || [])) {
+    h += TEXT_ITEM_H
+    const imgCount = (item.images || []).length
+    if (imgCount > 0) {
+      h += Math.floor(imgCount / 2) * PAIR_ROW_H
+      if (imgCount % 2 === 1) h += SINGLE_IMG_H
+    }
+  }
+  return h
+}
+
 function buildSectionsHTML(sections) {
-  return sections.map((section, idx) => {
+  // --- שלב 1: הערכת גבהים והחלטה על page-breaks ---
+  const PAGE_H = 1047       // A4 usable height: (297-8-12) * 96/25.4
+  const DOC_HEADER_H = 180  // הדר עם לוגו
+  const MIN_FILL = 0.35     // מינימום 35% מילוי עמוד כדי להצדיק שבירה
+
+  const heights = sections.map(estimateSectionHeight)
+  const shouldBreak = new Array(sections.length).fill(false)
+  let pageFill = DOC_HEADER_H
+
+  for (let i = 0; i < sections.length; i++) {
+    const hasImages = sectionHasImages(sections[i])
+    const sH = heights[i]
+
+    if (i === 0) {
+      // סקשן ראשון — אף פעם לא שובר
+      pageFill += sH
+      while (pageFill > PAGE_H) pageFill -= PAGE_H
+      continue
+    }
+
+    if (hasImages && (pageFill / PAGE_H) >= MIN_FILL) {
+      // עמוד מלא מספיק — שובר לעמוד חדש
+      shouldBreak[i] = true
+      pageFill = sH
+      while (pageFill > PAGE_H) pageFill -= PAGE_H
+    } else {
+      // עמוד ריק מדי או סקשן טקסט — ממשיך ברצף
+      pageFill += sH
+      while (pageFill > PAGE_H) pageFill -= PAGE_H
+    }
+  }
+
+  // --- שלב 1.5: זיהוי בלוק טקסט אחרון ---
+  // מוצאים את כל הסקשנים האחרונים ללא תמונות ועוטפים אותם בבלוק אחד
+  // כך הם זורמים ביחד — אין שורה יתומה בעמוד אחרון
+  let trailingTextStart = sections.length
+  for (let i = sections.length - 1; i >= 0; i--) {
+    if (!sectionHasImages(sections[i])) {
+      trailingTextStart = i
+    } else {
+      break
+    }
+  }
+
+  // --- שלב 2: בניית HTML ---
+  let globalImgNum = 1
+  const sectionDivs = sections.map((section, idx) => {
     const color = getSectionColor(section.title, idx)
     const hasImages = sectionHasImages(section)
-    const itemsHTML = (section.items || []).map((item, iIdx) =>
-      buildItemHTML(item, iIdx, color, section.items.length)
-    ).join('')
+    const itemsHTML = (section.items || []).map((item, iIdx) => {
+      const html = buildItemHTML(item, iIdx, color, section.items.length, globalImgNum)
+      globalImgNum += (item.images || []).length
+      return html
+    }).join('')
 
-    // קטגוריה עם תמונות = עמוד חדש (חוץ מהראשונה)
-    // קטגוריה ללא תמונות = break-inside:avoid, תנסה להישאר באותו עמוד
-    let style = 'margin-bottom:12px;'
-    if (hasImages && idx > 0) {
+    let style = 'margin-bottom:8px;'
+    if (shouldBreak[idx]) {
       style += 'page-break-before:always;'
-    } else {
+    }
+    // סקשנים בתוך הבלוק האחרון — ללא break-inside:avoid (זורמים חופשי)
+    if (!hasImages && idx < trailingTextStart) {
       style += 'page-break-inside:avoid;'
     }
 
     return (
       '<div style="' + style + '">' +
-        '<div style="background:' + color + ';border-radius:4px;padding:5px 12px;margin-bottom:6px;">' +
+        '<div style="background:' + color + ';border-radius:4px;padding:5px 12px;margin-bottom:6px;page-break-after:avoid;">' +
           '<span style="color:#fff;font-weight:700;font-size:13px;">' + section.title + '</span>' +
         '</div>' +
         itemsHTML +
       '</div>'
     )
-  }).join('')
+  })
+
+  // עטיפת הסקשנים האחרונים בבלוק אחד
+  if (trailingTextStart < sections.length - 1) {
+    const before = sectionDivs.slice(0, trailingTextStart)
+    const trailing = sectionDivs.slice(trailingTextStart)
+    return before.join('') + '<div style="page-break-inside:avoid;">' + trailing.join('') + '</div>'
+  }
+  return sectionDivs.join('')
 }
 
 function buildHTML(tradeName, sections) {
