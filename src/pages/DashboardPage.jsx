@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getTrades, createTrade } from '../services/tradeService'
+import { getTrades, createTrade, updateTrade } from '../services/tradeService'
 import { trades as staticTrades } from '../data/trades'
 
 const stats = [
@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false)
   const [newTrade, setNewTrade] = useState({ name: '', name_en: '', desc_text: '', desc_en: '', icon: 'build', color: '#3B82F6' })
   const [saving, setSaving] = useState(false)
+  const [editTrade, setEditTrade] = useState(null) // { id, name, desc }
 
   useEffect(() => {
     loadTrades()
@@ -61,6 +62,20 @@ export default function DashboardPage() {
       setTrades(staticTrades)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleEditTrade() {
+    if (!editTrade || !editTrade.name.trim()) return
+    setSaving(true)
+    try {
+      await updateTrade(editTrade.id, { name: editTrade.name.trim(), desc_text: editTrade.desc.trim() })
+      setEditTrade(null)
+      await loadTrades()
+    } catch (err) {
+      console.error('שגיאה בעדכון מלאכה:', err)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -116,16 +131,24 @@ export default function DashboardPage() {
           {trades.map((trade) => (
             <div
               key={trade.id}
-              onClick={() => navigate(`/trade/${trade.id}`)}
-              className="bg-white border border-border rounded-xl shadow-sm p-6 flex flex-col items-center gap-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200 group"
+              className="bg-white border border-border rounded-xl shadow-sm p-6 flex flex-col items-center gap-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200 group relative"
             >
+              {/* כפתור עריכה */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setEditTrade({ id: trade.id, name: trade.name, desc: trade.desc || '' }) }}
+                className="absolute top-2 left-2 w-7 h-7 rounded-full bg-bg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-border"
+                title="ערוך מלאכה"
+              >
+                <span className="material-symbols-outlined text-[14px] text-text-secondary">edit</span>
+              </button>
               <div
+                onClick={() => navigate(`/trade/${trade.id}`)}
                 className="w-16 h-16 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ backgroundColor: trade.color + '15' }}
               >
                 <span className="material-symbols-outlined text-[32px]" style={{ color: trade.color }}>{trade.icon}</span>
               </div>
-              <div className="text-center">
+              <div className="text-center" onClick={() => navigate(`/trade/${trade.id}`)}>
                 <p className="text-text-primary font-bold text-[16px]">{trade.name}</p>
                 <p className="text-text-secondary text-[12px] mt-1">{trade.desc}</p>
               </div>
@@ -141,6 +164,56 @@ export default function DashboardPage() {
               <span className="material-symbols-outlined text-[32px] text-text-secondary group-hover:text-primary transition-colors">add</span>
             </div>
             <p className="text-text-secondary font-medium text-[14px] group-hover:text-primary transition-colors">הוסף מלאכה</p>
+          </div>
+        </div>
+      )}
+
+      {/* מודל עריכת מלאכה */}
+      {editTrade && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditTrade(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[20px] font-bold text-text-primary">עריכת מלאכה</h3>
+              <button onClick={() => setEditTrade(null)} className="w-8 h-8 rounded-full bg-bg flex items-center justify-center hover:bg-border transition-colors">
+                <span className="material-symbols-outlined text-[18px] text-text-secondary">close</span>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-[13px] font-medium text-text-primary mb-1 block">שם המלאכה</label>
+                <input
+                  type="text"
+                  value={editTrade.name}
+                  onChange={e => setEditTrade(p => ({ ...p, name: e.target.value }))}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-[13px] font-medium text-text-primary mb-1 block">תיאור</label>
+                <input
+                  type="text"
+                  value={editTrade.desc}
+                  onChange={e => setEditTrade(p => ({ ...p, desc: e.target.value }))}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleEditTrade}
+                disabled={saving || !editTrade.name.trim()}
+                className="flex-1 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-[14px] font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? 'שומר...' : 'שמור שינויים'}
+              </button>
+              <button
+                onClick={() => setEditTrade(null)}
+                className="px-6 py-2.5 rounded-lg text-[14px] font-medium border border-border text-text-secondary hover:bg-bg transition-all"
+              >
+                ביטול
+              </button>
+            </div>
           </div>
         </div>
       )}
