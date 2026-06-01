@@ -41,7 +41,7 @@ body {
 }
 
 .accordion-active .accordion-content {
-  max-height: 2000px;
+  max-height: 20000px;
 }
 
 .accordion-active .chevron-icon {
