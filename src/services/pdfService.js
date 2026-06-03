@@ -119,10 +119,8 @@ function estimateSectionHeight(section) {
 }
 
 function buildSectionsHTML(sections) {
-  // --- שלב 0: מיון — סקשנים עם תמונות קודם, טקסט בלבד בסוף ---
-  const withImages = sections.filter(s => sectionHasImages(s))
-  const textOnly = sections.filter(s => !sectionHasImages(s))
-  const sorted = [...withImages, ...textOnly]
+  // סדר מקורי — כמו במערכת, בלי מיון
+  const sorted = [...sections]
 
   // --- שלב 1: הערכת גבהים והחלטה על page-breaks ---
   const PAGE_H = 1047       // A4 usable height: (297-8-12) * 96/25.4
@@ -155,12 +153,10 @@ function buildSectionsHTML(sections) {
 
   // --- שלב 2: בניית HTML ---
   let globalImgNum = 1
-  const imageDivs = []
-  const textDivs = []
+  const allDivs = []
 
   sorted.forEach((section, idx) => {
-    const origIdx = sections.indexOf(section)
-    const color = getSectionColor(section.title, origIdx)
+    const color = getSectionColor(section.title, idx)
     const hasImages = sectionHasImages(section)
     const itemsHTML = (section.items || []).map((item, iIdx) => {
       const html = buildItemHTML(item, iIdx, color, section.items.length, globalImgNum)
@@ -181,19 +177,10 @@ function buildSectionsHTML(sections) {
         itemsHTML +
       '</div>'
 
-    if (hasImages) {
-      imageDivs.push(div)
-    } else {
-      textDivs.push(div)
-    }
+    allDivs.push(div)
   })
 
-  // סקשנים עם תמונות + בלוק טקסט אחרון עטוף ביחד
-  if (textDivs.length > 0) {
-    return imageDivs.join('') +
-      '<div style="page-break-inside:avoid;">' + textDivs.join('') + '</div>'
-  }
-  return imageDivs.join('')
+  return allDivs.join('')
 }
 
 function buildHTML(tradeName, sections) {
