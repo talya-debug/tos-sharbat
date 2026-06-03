@@ -22,9 +22,6 @@ export default function LandingPage() {
       >
         כניסה למערכת
       </button>
-
-      {/* קרדיט */}
-      <p className="absolute bottom-8 text-white/20 text-[12px] tracking-[0.2em]">OSHER ASULIN</p>
     </div>
   )
 }
