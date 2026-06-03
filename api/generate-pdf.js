@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       printBackground: true,
       displayHeaderFooter: true,
       headerTemplate: '<span></span>',
-      footerTemplate: '<div style="font-size:9px;color:#94a3b8;width:100%;text-align:center;padding-top:2px;direction:rtl;"><span style="border-top:1px solid #1e3a5f;padding-top:3px;display:inline-block;">הופק ע״י מערכת TOS</span></div>',
+      footerTemplate: '<div style="font-size:9px;color:#94a3b8;width:100%;text-align:center;padding-top:2px;direction:rtl;"><span style="border-top:1px solid #1e3a5f;padding-top:3px;display:inline-block;">הופק על ידי מערכת TOS</span></div>',
     })
 
     await browser.close()
