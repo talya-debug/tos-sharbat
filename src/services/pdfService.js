@@ -219,8 +219,8 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:24px;font-weight:800;color:#1e3a5f;">' + tradeName + '</div>' +
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
-      '<td style="text-align:left;vertical-align:middle;width:140px;">' +
-        '<img src="' + LOGO_SHARBAT + '" style="height:130px;" />' +
+      '<td style="text-align:left;vertical-align:middle;width:180px;">' +
+        '<img src="' + LOGO_SHARBAT + '" style="height:60px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +
