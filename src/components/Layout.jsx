@@ -37,7 +37,7 @@ export default function Layout({ children }) {
       {/* סיידבר */}
       <aside className={`fixed right-0 top-0 h-full flex flex-col z-50 bg-sidebar-bg w-[240px] shadow-lg transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-6 flex flex-col items-center">
-          <h1 className="text-[24px] leading-[32px] font-bold text-white mb-1">TOS QC Platform</h1>
+          <img src="/sharbat-logo.png" alt="צפריר וזוהר שרבט" className="h-16 mb-2" />
           <p className="text-white/50 text-[12px] tracking-wider">מערכת ניהול איכות</p>
         </div>
         <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
