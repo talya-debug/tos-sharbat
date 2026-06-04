@@ -50,3 +50,11 @@ export async function deleteSubsection(id) {
     .eq('id', id)
   if (error) throw error
 }
+
+// סידור מחדש של תת-קטגוריות
+export async function reorderSubsections(sectionId, orderedIds) {
+  const updates = orderedIds.map((id, index) =>
+    supabase.from('subsections').update({ order: index }).eq('id', id)
+  )
+  await Promise.all(updates)
+}

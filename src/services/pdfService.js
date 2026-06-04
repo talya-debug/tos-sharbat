@@ -99,20 +99,39 @@ function buildItemHTML(item, iIdx, color, totalItems, globalImgNum) {
   )
 }
 
-// הערכת גובה סקשן בפיקסלים (לחישוב page-break חכם)
+// הערכת גובה סקשן בפיקסלים
 function estimateSectionHeight(section) {
   const HEADER_H = 35
+  const SUBSECTION_HEADER_H = 30
   const TEXT_ITEM_H = 42
   const PAIR_ROW_H = 235
   const SINGLE_IMG_H = 200
 
   let h = HEADER_H
-  for (const item of (section.items || [])) {
-    h += TEXT_ITEM_H
-    const imgCount = (item.images || []).length
-    if (imgCount > 0) {
-      h += Math.floor(imgCount / 2) * PAIR_ROW_H
-      if (imgCount % 2 === 1) h += SINGLE_IMG_H
+
+  // אם יש groups — חשב לפיהם
+  const groups = section.groups || null
+  if (groups && groups.length > 0) {
+    for (const group of groups) {
+      if (group.type === 'subsection') h += SUBSECTION_HEADER_H
+      if (group.type === 'general' && groups.some(g => g.type === 'subsection')) h += SUBSECTION_HEADER_H
+      for (const item of (group.items || [])) {
+        h += TEXT_ITEM_H
+        const imgCount = (item.images || []).length
+        if (imgCount > 0) {
+          h += Math.floor(imgCount / 2) * PAIR_ROW_H
+          if (imgCount % 2 === 1) h += SINGLE_IMG_H
+        }
+      }
+    }
+  } else {
+    for (const item of (section.items || [])) {
+      h += TEXT_ITEM_H
+      const imgCount = (item.images || []).length
+      if (imgCount > 0) {
+        h += Math.floor(imgCount / 2) * PAIR_ROW_H
+        if (imgCount % 2 === 1) h += SINGLE_IMG_H
+      }
     }
   }
   return h
@@ -132,7 +151,6 @@ function buildSectionsHTML(sections) {
   let pageFill = DOC_HEADER_H
 
   for (let i = 0; i < sorted.length; i++) {
-    const hasImages = sectionHasImages(sorted[i])
     const sH = heights[i]
 
     if (i === 0) {
@@ -141,7 +159,9 @@ function buildSectionsHTML(sections) {
       continue
     }
 
-    if (hasImages && (pageFill / PAGE_H) >= MIN_FILL) {
+    const remainingOnPage = PAGE_H - pageFill
+    // אם פחות מ-40% מהקטגוריה נכנס בעמוד הנוכחי — עמוד חדש
+    if (remainingOnPage < sH * 0.4 && remainingOnPage < PAGE_H * 0.6) {
       shouldBreak[i] = true
       pageFill = sH
       while (pageFill > PAGE_H) pageFill -= PAGE_H
