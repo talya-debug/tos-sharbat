@@ -8,7 +8,7 @@
 // - סעיף+תמונות = יחידה אחת
 // - 2 תמונות בשורה, בודדת ממורכזת
 
-import { LOGO_SHARBAT } from './logo-sharbat-base64'
+import { LOGO_PISGAT } from './logo-base64'
 
 const SECTION_COLOR_MAP = {
   'לפני ביצוע': '#405c9c',
@@ -158,11 +158,48 @@ function buildSectionsHTML(sections) {
   sorted.forEach((section, idx) => {
     const color = getSectionColor(section.title, idx)
     const hasImages = sectionHasImages(section)
-    const itemsHTML = (section.items || []).map((item, iIdx) => {
-      const html = buildItemHTML(item, iIdx, color, section.items.length, globalImgNum)
-      globalImgNum += (item.images || []).length
-      return html
-    }).join('')
+    const groups = section.groups || null
+
+    let itemsHTML = ''
+
+    if (groups && groups.length > 0) {
+      // רינדור עם תת-קטגוריות
+      groups.forEach((group) => {
+        if (group.type === 'subsection' && group.items.length > 0) {
+          // כותרת תת-קטגוריה
+          itemsHTML +=
+            '<div style="page-break-inside:avoid;margin:10px 0 4px 0;padding:3px 10px;background:' + color + '22;border-radius:3px;border-right:3px solid ' + color + ';">' +
+              '<span style="font-weight:600;font-size:12px;color:' + color + ';">' + group.subsection.title + '</span>' +
+            '</div>'
+          // פריטים
+          itemsHTML += group.items.map((item, iIdx) => {
+            const html = buildItemHTML(item, iIdx, color, group.items.length, globalImgNum)
+            globalImgNum += (item.images || []).length
+            return html
+          }).join('')
+        } else if (group.type === 'general' && group.items.length > 0) {
+          // כותרת כללי (רק אם יש גם תת-קטגוריות)
+          if (groups.some(g => g.type === 'subsection')) {
+            itemsHTML +=
+              '<div style="page-break-inside:avoid;margin:10px 0 4px 0;padding:3px 10px;background:#f1f5f9;border-radius:3px;border-right:3px solid #94a3b8;">' +
+                '<span style="font-weight:600;font-size:12px;color:#64748b;">כללי</span>' +
+              '</div>'
+          }
+          itemsHTML += group.items.map((item, iIdx) => {
+            const html = buildItemHTML(item, iIdx, color, group.items.length, globalImgNum)
+            globalImgNum += (item.images || []).length
+            return html
+          }).join('')
+        }
+      })
+    } else {
+      // רינדור רגיל בלי תת-קטגוריות
+      itemsHTML = (section.items || []).map((item, iIdx) => {
+        const html = buildItemHTML(item, iIdx, color, section.items.length, globalImgNum)
+        globalImgNum += (item.images || []).length
+        return html
+      }).join('')
+    }
 
     let style = 'margin-bottom:8px;'
     if (shouldBreak[idx]) {
@@ -206,8 +243,8 @@ function buildHTML(tradeName, sections) {
         '<div style="font-size:24px;font-weight:800;color:#1e3a5f;">' + tradeName + '</div>' +
         '<div style="font-size:10px;color:#94a3b8;margin-top:2px;"><span style="margin-left:6px;">TOS</span>|<span style="margin-right:6px;">מדריך ביצוע ובקרת איכות</span></div>' +
       '</td>' +
-      '<td style="text-align:left;vertical-align:middle;width:180px;">' +
-        '<img src="' + LOGO_SHARBAT + '" style="height:60px;" />' +
+      '<td style="text-align:left;vertical-align:middle;width:140px;">' +
+        '<img src="' + LOGO_PISGAT + '" style="height:130px;" />' +
       '</td>' +
     '</tr>' +
   '</table>' +

@@ -12,7 +12,7 @@ export async function getItems(sectionId) {
 }
 
 // יצירת פריט חדש
-export async function createItem(sectionId, { text, text_en = '' }) {
+export async function createItem(sectionId, { text, text_en = '', subsection_id = null }) {
   const { data: existing } = await supabase
     .from('items')
     .select('order')
@@ -23,9 +23,32 @@ export async function createItem(sectionId, { text, text_en = '' }) {
 
   const { data, error } = await supabase
     .from('items')
-    .insert({ section_id: sectionId, text, text_en, order: nextOrder })
+    .insert({ section_id: sectionId, text, text_en, order: nextOrder, subsection_id })
     .select()
     .single()
+  if (error) throw error
+  return data
+}
+
+// שליפת פריטים לתת-קטגוריה
+export async function getItemsBySubsection(subsectionId) {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('subsection_id', subsectionId)
+    .order('order', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+// שליפת פריטים כלליים (ללא תת-קטגוריה) בפרק
+export async function getGeneralItems(sectionId) {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('section_id', sectionId)
+    .is('subsection_id', null)
+    .order('order', { ascending: true })
   if (error) throw error
   return data
 }

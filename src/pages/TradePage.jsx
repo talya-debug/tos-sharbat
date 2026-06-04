@@ -5,6 +5,7 @@ import { tradeData } from '../data/tradeData'
 import { getTrade } from '../services/tradeService'
 import { getSections, createSection, deleteSection } from '../services/sectionService'
 import { getItems, createItem, updateItem, deleteItem, reorderItems } from '../services/itemService'
+import { getSubsections, createSubsection, updateSubsection, deleteSubsection } from '../services/subsectionService'
 import { uploadImage, deleteImage } from '../services/storageService'
 import { exportTradePDF } from '../services/pdfService'
 
@@ -84,6 +85,13 @@ export default function TradePage() {
   const [showAddSection, setShowAddSection] = useState(false)
   const [newSectionTitle, setNewSectionTitle] = useState('')
 
+  // תת-קטגוריות
+  const [subsections, setSubsections] = useState({}) // { sectionId: [subsections] }
+  const [showAddSubsection, setShowAddSubsection] = useState(null) // sectionId
+  const [newSubsectionTitle, setNewSubsectionTitle] = useState('')
+  const [editingSubsection, setEditingSubsection] = useState(null)
+  const [editSubsectionText, setEditSubsectionText] = useState('')
+
   // תמונות — לפריטי Supabase מגיע מ-DB, לפריטים סטטיים מ-defaultImages
   const [localImages, setLocalImages] = useState({})
 
@@ -101,13 +109,19 @@ export default function TradePage() {
         setUseSupabase(true)
         const sbSections = await getSections(tradeId)
         setSections(sbSections)
-        // טעינת פריטים לכל פרק
+        // טעינת פריטים + תת-קטגוריות לכל פרק
         const itemsMap = {}
+        const subsMap = {}
         await Promise.all(sbSections.map(async (sec) => {
-          const items = await getItems(sec.id)
+          const [items, subs] = await Promise.all([
+            getItems(sec.id),
+            getSubsections(sec.id)
+          ])
           itemsMap[sec.id] = items
+          subsMap[sec.id] = subs
         }))
         setSectionItems(itemsMap)
+        setSubsections(subsMap)
         setLoading(false)
         return
       }
@@ -138,6 +152,35 @@ export default function TradePage() {
 
   // --- רינדור ---
   const displayTrade = useSupabase ? trade : staticTrade
+  // קיבוץ פריטים לפי תת-קטגוריות
+  function groupItemsBySubsection(sectionId) {
+    const items = sectionItems[sectionId] || []
+    const subs = subsections[sectionId] || []
+    const groups = []
+    let globalIdx = 1
+
+    // תת-קטגוריות עם הפריטים שלהן
+    subs.forEach((sub, subIdx) => {
+      const subItems = items
+        .filter(i => i.subsection_id === sub.id)
+        .map((item, idx) => ({ ...item, displayId: `${subIdx + 1}.${idx + 1}` }))
+      if (subItems.length > 0 || true) { // מציג גם ריקות כדי שאפשר להוסיף
+        groups.push({ type: 'subsection', subsection: sub, items: subItems, subIdx: subIdx + 1 })
+      }
+      globalIdx += subItems.length
+    })
+
+    // פריטים כלליים (בלי תת-קטגוריה)
+    const generalItems = items
+      .filter(i => !i.subsection_id)
+      .map((item, idx) => ({ ...item, displayId: subs.length > 0 ? `${subs.length + 1}.${idx + 1}` : idx + 1 }))
+    if (generalItems.length > 0 || subs.length > 0) {
+      groups.push({ type: 'general', items: generalItems })
+    }
+
+    return groups
+  }
+
   const displaySections = useSupabase
     ? sections.map(s => ({
         ...s,
@@ -147,6 +190,7 @@ export default function TradePage() {
           ...item,
           displayId: idx + 1,
         })),
+        groups: groupItemsBySubsection(s.id),
       }))
     : (staticData?.sections || []).map(s => ({
         ...s,
@@ -203,21 +247,78 @@ export default function TradePage() {
   }
 
   // --- הוספת פריט ---
-  async function handleAddItem(sectionId) {
+  async function handleAddItem(sectionId, subsectionId = null) {
     if (!useSupabase) return
     try {
-      const newItem = await createItem(sectionId, { text: 'פריט חדש' })
+      const newItem = await createItem(sectionId, { text: 'פריט חדש', subsection_id: subsectionId })
       setSectionItems(prev => ({
         ...prev,
         [sectionId]: [...(prev[sectionId] || []), newItem],
       }))
-      // התחלת עריכה מיידית
       setEditingItem(newItem.id)
       setEditText('פריט חדש')
       setTimeout(() => editInputRef.current?.focus(), 50)
     } catch (err) {
       console.error('שגיאה בהוספת פריט:', err)
     }
+  }
+
+  // --- תת-קטגוריות ---
+  async function handleAddSubsection(sectionId) {
+    if (!useSupabase || !newSubsectionTitle.trim()) return
+    try {
+      const sub = await createSubsection(sectionId, { title: newSubsectionTitle.trim() })
+      setSubsections(prev => ({
+        ...prev,
+        [sectionId]: [...(prev[sectionId] || []), sub],
+      }))
+      setShowAddSubsection(null)
+      setNewSubsectionTitle('')
+    } catch (err) {
+      console.error('שגיאה בהוספת תת-קטגוריה:', err)
+    }
+  }
+
+  async function handleDeleteSubsection(sectionId, subsectionId) {
+    if (!useSupabase) return
+    if (!confirm('למחוק את תת-הקטגוריה? הפריטים שבה יעברו לכללי.')) return
+    try {
+      await deleteSubsection(subsectionId)
+      setSubsections(prev => ({
+        ...prev,
+        [sectionId]: (prev[sectionId] || []).filter(s => s.id !== subsectionId),
+      }))
+      // פריטים שהיו בתת-קטגוריה עוברים ל-null (כללי) — DB עושה SET NULL
+      setSectionItems(prev => ({
+        ...prev,
+        [sectionId]: (prev[sectionId] || []).map(i =>
+          i.subsection_id === subsectionId ? { ...i, subsection_id: null } : i
+        ),
+      }))
+    } catch (err) {
+      console.error('שגיאה במחיקת תת-קטגוריה:', err)
+    }
+  }
+
+  function startEditSubsection(sub) {
+    setEditingSubsection(sub.id)
+    setEditSubsectionText(sub.title)
+  }
+
+  async function saveEditSubsection(sectionId, subId) {
+    if (!editSubsectionText.trim()) return
+    try {
+      await updateSubsection(subId, { title: editSubsectionText.trim() })
+      setSubsections(prev => ({
+        ...prev,
+        [sectionId]: (prev[sectionId] || []).map(s =>
+          s.id === subId ? { ...s, title: editSubsectionText.trim() } : s
+        ),
+      }))
+    } catch (err) {
+      console.error('שגיאה בעדכון תת-קטגוריה:', err)
+    }
+    setEditingSubsection(null)
   }
 
   // --- מחיקת פריט ---
@@ -486,110 +587,261 @@ export default function TradePage() {
               </button>
               <div className="accordion-content border-t border-border">
                 <div className="p-6 space-y-4 text-[16px] leading-[24px] text-text-secondary">
-                  {section.items.map((item, itemIdx) => {
-                    const itemImages = useSupabase
-                      ? (item.images || [])
-                      : getItemImages(sectionId, item)
-                    const imgKey = useSupabase ? `${sectionId}|${item.id}` : `${sectionId}-${item.id}`
-                    const isEditing = editingItem === item.id
+                  {useSupabase && section.groups ? (
+                    <>
+                      {section.groups.map((group, gIdx) => {
+                        const renderItem = (item, itemIdx, allItems) => {
+                          const itemImages = item.images || []
+                          const imgKey = `${sectionId}|${item.id}`
+                          const isEditing = editingItem === item.id
 
-                    return (
-                      <div key={item.id}>
-                        {itemIdx > 0 && <div className="h-px bg-border w-full mb-4"></div>}
-                        <div className="flex gap-4 items-start group">
-                          <span
-                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white mt-0.5"
-                            style={{ backgroundColor: color }}
-                          >
-                            {item.displayId}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            {isEditing ? (
-                              <input
-                                ref={editInputRef}
-                                type="text"
-                                value={editText}
-                                onChange={e => setEditText(e.target.value)}
-                                onBlur={() => saveEdit(item.id)}
-                                onKeyDown={e => { if (e.key === 'Enter') saveEdit(item.id); if (e.key === 'Escape') setEditingItem(null) }}
-                                className="w-full border border-primary rounded-lg px-3 py-1.5 text-[16px] outline-none focus:ring-2 focus:ring-primary/30"
-                              />
-                            ) : (
-                              <p
-                                onClick={() => startEdit(item)}
-                                className={useSupabase ? 'cursor-pointer hover:bg-bg/50 rounded px-1 -mx-1 transition-colors' : ''}
-                              >
-                                {item.text}
-                              </p>
-                            )}
-                            {/* תמונות + כפתור הוספה */}
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              {itemImages.map((url, imgIdx) => (
-                                <div key={imgIdx} className="relative group/img">
-                                  <img
-                                    src={url}
-                                    alt={`תמונה ${imgIdx + 1}`}
-                                    className="w-12 h-12 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => setLightboxImg(url)}
-                                  />
+                          return (
+                            <div key={item.id}>
+                              {itemIdx > 0 && <div className="h-px bg-border/50 w-full mb-3"></div>}
+                              <div className="flex gap-4 items-start group">
+                                <span
+                                  className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white mt-0.5"
+                                  style={{ backgroundColor: color }}
+                                >
+                                  {item.displayId}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  {isEditing ? (
+                                    <input
+                                      ref={editInputRef}
+                                      type="text"
+                                      value={editText}
+                                      onChange={e => setEditText(e.target.value)}
+                                      onBlur={() => saveEdit(item.id)}
+                                      onKeyDown={e => { if (e.key === 'Enter') saveEdit(item.id); if (e.key === 'Escape') setEditingItem(null) }}
+                                      className="w-full border border-primary rounded-lg px-3 py-1.5 text-[16px] outline-none focus:ring-2 focus:ring-primary/30"
+                                    />
+                                  ) : (
+                                    <p
+                                      onClick={() => startEdit(item)}
+                                      className="cursor-pointer hover:bg-bg/50 rounded px-1 -mx-1 transition-colors"
+                                    >
+                                      {item.text}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    {itemImages.map((url, imgIdx) => (
+                                      <div key={imgIdx} className="relative group/img">
+                                        <img
+                                          src={url}
+                                          alt={`תמונה ${imgIdx + 1}`}
+                                          className="w-12 h-12 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => setLightboxImg(url)}
+                                        />
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); removeImage(sectionId, item.id, imgIdx) }}
+                                          className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-error text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow"
+                                        >
+                                          X
+                                        </button>
+                                      </div>
+                                    ))}
+                                    <button
+                                      onClick={() => handleAddImage(imgKey)}
+                                      className="w-12 h-12 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-text-secondary hover:border-action-blue hover:text-action-blue transition-colors"
+                                      title="הוספת תמונה"
+                                    >
+                                      <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); removeImage(sectionId, item.id, imgIdx) }}
-                                    className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-error text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow"
+                                    onClick={() => handleDeleteItem(item.id, sectionId)}
+                                    className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-error hover:bg-error/10 transition-all"
+                                    title="מחק פריט"
                                   >
-                                    X
+                                    <span className="material-symbols-outlined text-[16px]">close</span>
                                   </button>
                                 </div>
-                              ))}
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        if (group.type === 'subsection') {
+                          return (
+                            <div key={group.subsection.id} className="mb-4">
+                              {gIdx > 0 && <div className="h-px bg-border w-full mb-4"></div>}
+                              {/* כותרת תת-קטגוריה */}
+                              <div className="flex items-center gap-2 mb-3 group/sub">
+                                <div
+                                  className="w-1 h-6 rounded-full"
+                                  style={{ backgroundColor: color, opacity: 0.5 }}
+                                ></div>
+                                {editingSubsection === group.subsection.id ? (
+                                  <input
+                                    type="text"
+                                    value={editSubsectionText}
+                                    onChange={e => setEditSubsectionText(e.target.value)}
+                                    onBlur={() => saveEditSubsection(sectionId, group.subsection.id)}
+                                    onKeyDown={e => { if (e.key === 'Enter') saveEditSubsection(sectionId, group.subsection.id); if (e.key === 'Escape') setEditingSubsection(null) }}
+                                    className="border border-primary rounded px-2 py-1 text-[15px] font-semibold outline-none focus:ring-2 focus:ring-primary/30"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <span
+                                    className="text-[15px] font-semibold cursor-pointer hover:bg-bg/50 rounded px-1 transition-colors"
+                                    style={{ color }}
+                                    onClick={() => startEditSubsection(group.subsection)}
+                                  >
+                                    {group.subsection.title}
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteSubsection(sectionId, group.subsection.id)}
+                                  className="w-5 h-5 rounded flex items-center justify-center text-text-secondary hover:text-error transition-all opacity-0 group-hover/sub:opacity-100"
+                                  title="מחק תת-קטגוריה"
+                                >
+                                  <span className="material-symbols-outlined text-[14px]">close</span>
+                                </button>
+                              </div>
+                              {/* פריטים בתת-קטגוריה */}
+                              <div className="pr-4 border-r-2 border-border/30 space-y-3">
+                                {group.items.map((item, iIdx) => renderItem(item, iIdx, group.items))}
+                                <button
+                                  onClick={() => handleAddItem(sectionId, group.subsection.id)}
+                                  className="flex items-center gap-2 text-text-secondary hover:text-primary text-[13px] transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                                  הוסף פריט
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        // כללי
+                        return (
+                          <div key="general" className="mb-4">
+                            {gIdx > 0 && <div className="h-px bg-border w-full mb-4"></div>}
+                            {(subsections[sectionId] || []).length > 0 && (
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-1 h-6 rounded-full bg-text-secondary/30"></div>
+                                <span className="text-[15px] font-semibold text-text-secondary">כללי</span>
+                              </div>
+                            )}
+                            <div className={`${(subsections[sectionId] || []).length > 0 ? 'pr-4 border-r-2 border-border/30' : ''} space-y-3`}>
+                              {group.items.map((item, iIdx) => renderItem(item, iIdx, group.items))}
                               <button
-                                onClick={() => handleAddImage(imgKey)}
-                                className="w-12 h-12 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-text-secondary hover:border-action-blue hover:text-action-blue transition-colors"
-                                title="הוספת תמונה"
+                                onClick={() => handleAddItem(sectionId)}
+                                className="flex items-center gap-2 text-text-secondary hover:text-primary text-[13px] transition-colors"
                               >
-                                <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
+                                <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                                הוסף פריט
                               </button>
                             </div>
                           </div>
-                          {/* כפתורי סידור + מחיקה */}
-                          {useSupabase && (
-                            <div className="flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
-                              <button
-                                onClick={() => handleMoveItem(sectionId, itemIdx, -1)}
-                                disabled={itemIdx === 0}
-                                className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-primary hover:bg-primary/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
-                                title="הזז למעלה"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">keyboard_arrow_up</span>
-                              </button>
-                              <button
-                                onClick={() => handleMoveItem(sectionId, itemIdx, 1)}
-                                disabled={itemIdx === section.items.length - 1}
-                                className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-primary hover:bg-primary/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
-                                title="הזז למטה"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteItem(item.id, sectionId)}
-                                className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-error hover:bg-error/10 transition-all"
-                                title="מחק פריט"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">close</span>
-                              </button>
-                            </div>
-                          )}
+                        )
+                      })}
+                      {/* כפתור הוספת תת-קטגוריה */}
+                      {showAddSubsection === sectionId ? (
+                        <div className="flex items-center gap-2 mt-2">
+                          <input
+                            type="text"
+                            value={newSubsectionTitle}
+                            onChange={e => setNewSubsectionTitle(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') handleAddSubsection(sectionId); if (e.key === 'Escape') setShowAddSubsection(null) }}
+                            placeholder="שם תת-קטגוריה"
+                            className="flex-1 border border-border rounded-lg px-3 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-primary/30"
+                            autoFocus
+                          />
+                          <button onClick={() => handleAddSubsection(sectionId)} disabled={!newSubsectionTitle.trim()} className="bg-primary text-white px-3 py-1.5 rounded-lg text-[13px] font-medium disabled:opacity-50">הוסף</button>
+                          <button onClick={() => { setShowAddSubsection(null); setNewSubsectionTitle('') }} className="text-text-secondary hover:text-text-primary"><span className="material-symbols-outlined text-[18px]">close</span></button>
                         </div>
-                      </div>
-                    )
-                  })}
-                  {/* כפתור הוספת פריט */}
-                  {useSupabase && (
-                    <button
-                      onClick={() => handleAddItem(sectionId)}
-                      className="flex items-center gap-2 text-text-secondary hover:text-primary text-[14px] mt-2 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                      הוסף פריט
-                    </button>
+                      ) : (
+                        <button
+                          onClick={() => setShowAddSubsection(sectionId)}
+                          className="flex items-center gap-2 text-text-secondary hover:text-primary text-[13px] mt-2 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">create_new_folder</span>
+                          הוסף תת-קטגוריה
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {section.items.map((item, itemIdx) => {
+                        const itemImages = useSupabase
+                          ? (item.images || [])
+                          : getItemImages(sectionId, item)
+                        const imgKey = useSupabase ? `${sectionId}|${item.id}` : `${sectionId}-${item.id}`
+                        const isEditing = editingItem === item.id
+
+                        return (
+                          <div key={item.id}>
+                            {itemIdx > 0 && <div className="h-px bg-border w-full mb-4"></div>}
+                            <div className="flex gap-4 items-start group">
+                              <span
+                                className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white mt-0.5"
+                                style={{ backgroundColor: color }}
+                              >
+                                {item.displayId}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                {isEditing ? (
+                                  <input
+                                    ref={editInputRef}
+                                    type="text"
+                                    value={editText}
+                                    onChange={e => setEditText(e.target.value)}
+                                    onBlur={() => saveEdit(item.id)}
+                                    onKeyDown={e => { if (e.key === 'Enter') saveEdit(item.id); if (e.key === 'Escape') setEditingItem(null) }}
+                                    className="w-full border border-primary rounded-lg px-3 py-1.5 text-[16px] outline-none focus:ring-2 focus:ring-primary/30"
+                                  />
+                                ) : (
+                                  <p
+                                    onClick={() => startEdit(item)}
+                                    className={useSupabase ? 'cursor-pointer hover:bg-bg/50 rounded px-1 -mx-1 transition-colors' : ''}
+                                  >
+                                    {item.text}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                  {itemImages.map((url, imgIdx) => (
+                                    <div key={imgIdx} className="relative group/img">
+                                      <img
+                                        src={url}
+                                        alt={`תמונה ${imgIdx + 1}`}
+                                        className="w-12 h-12 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => setLightboxImg(url)}
+                                      />
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); removeImage(sectionId, item.id, imgIdx) }}
+                                        className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-error text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow"
+                                      >
+                                        X
+                                      </button>
+                                    </div>
+                                  ))}
+                                  <button
+                                    onClick={() => handleAddImage(imgKey)}
+                                    className="w-12 h-12 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-text-secondary hover:border-action-blue hover:text-action-blue transition-colors"
+                                    title="הוספת תמונה"
+                                  >
+                                    <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {useSupabase && (
+                        <button
+                          onClick={() => handleAddItem(sectionId)}
+                          className="flex items-center gap-2 text-text-secondary hover:text-primary text-[14px] mt-2 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                          הוסף פריט
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
