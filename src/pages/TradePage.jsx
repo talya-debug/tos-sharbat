@@ -174,9 +174,8 @@ export default function TradePage() {
     const generalItems = items
       .filter(i => !i.subsection_id)
       .map((item, idx) => ({ ...item, displayId: subs.length > 0 ? `${subs.length + 1}.${idx + 1}` : idx + 1 }))
-    if (generalItems.length > 0 || subs.length > 0) {
-      groups.push({ type: 'general', items: generalItems })
-    }
+    // תמיד מציג כללי — גם כשריק, כדי שאפשר יהיה להוסיף סעיפים
+    groups.push({ type: 'general', items: generalItems })
 
     return groups
   }
